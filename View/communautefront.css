@@ -1,0 +1,254 @@
+/* Style général */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: radial-gradient(circle at top, #0a0a1a, #060612 80%);
+    color: #fff;
+    padding: 20px;
+}
+
+/* En-tête */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.2em;
+    color: #7a3ff2; /* Violet cyber */
+    text-shadow: 0 0 15px #4b00ff;
+}
+
+header p {
+    color: #88aaff;
+    font-size: 1.1em;
+}
+
+/* Section de publication */
+#publication-form {
+    background: rgba(20, 20, 40, 0.8);
+    border: 1px solid #2a2a5a;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto 40px auto;
+    box-shadow: 0 0 20px rgba(100, 0, 255, 0.2);
+}
+
+#publication-form h2 {
+    color: #00bfff;
+    margin-bottom: 15px;
+}
+
+#postText {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    resize: none;
+    font-size: 1em;
+    margin-bottom: 10px;
+    background-color: #111;
+    color: #fff;
+}
+
+#fileInput {
+    margin-bottom: 10px;
+}
+
+#publishBtn {
+    background: linear-gradient(90deg, #7a3ff2, #00bfff);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#publishBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #7a3ff2;
+}
+
+/* Section des publications */
+#posts-section {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#posts-section h2 {
+    text-align: center;
+    color: #00bfff;
+    margin-bottom: 20px;
+}
+
+.post {
+    background: rgba(15, 15, 35, 0.9);
+    border: 1px solid #3a3a7a;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.post p {
+    margin-bottom: 10px;
+}
+
+/* Réactions (like/dislike) */
+.reactions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reactions button {
+    background: none;
+    border: none;
+    color: #88aaff;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: 0.2s;
+}
+
+.reactions button:hover {
+    color: #00bfff;
+    transform: scale(1.2);
+}
+
+/* Commentaires */
+.comment-section {
+    margin-top: 10px;
+}
+
+.comment-section input {
+    width: 80%;
+    padding: 5px;
+    border-radius: 6px;
+    border: none;
+    background-color: #1a1a2e;
+    color: #fff;
+}
+
+.comment-section button {
+    background-color: #7a3ff2;
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.comment-section button:hover {
+    background-color: #00bfff;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+}
+
+#sidebar {
+    width: 220px;
+    background-color: #1f1f1f;
+    height: 100vh;
+    padding: 20px;
+    color: white;
+}
+
+.side-btn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #4a4aff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+
+/* Container pour toutes les publications */
+#my-publications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Card de chaque publication */
+.post-card {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.post-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Header de la publication */
+.post-header {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+/* Contenu de la publication */
+.post-content { 
+    font-size: 16px; 
+    margin-bottom: 12px; 
+    color: #000; /* Texte en noir */
+}
+
+
+/* Lien fichier */
+.post-file a {
+    color: #007BFF;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.post-file a:hover {
+    text-decoration: underline;
+}
+
+/* Actions */
+.post-actions a {
+    margin-right: 10px;
+    text-decoration: none;
+    font-size: 14px;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.post-actions a:hover {
+    color: #007BFF;
+}
+
+
+#main-content {
+    padding: 20px;
+    width: 100%;
+}
+
+.feed-post {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+/* Forcer le texte des publications en noir */
+.post-card, 
+.post-card * {
+    color: #000 !important;
+}
+

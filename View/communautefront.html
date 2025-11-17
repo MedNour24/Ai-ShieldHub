@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Communauté - Cyber Security</title>
+    <link rel="stylesheet" href="communautefront.css">
+</head>
+
+<body>
+
+    <!-- MENU LATERAL -->
+    <div id="sidebar">
+        <h2>Menu</h2>
+        <button class="side-btn" id="btnMesPublications">Mes Publications</button>
+        <button class="side-btn" id="btnFeed">Feed</button>
+    </div>
+
+    <!-- CONTENU PRINCIPAL -->
+    <div id="main-content">
+
+        <!-- SECTION : Formulaire + Tableau -->
+        <section id="mes-publications-section" style="display:none;">
+
+            <h2>Ajouter une publication</h2>
+
+            <form id="formPublication">
+                <textarea id="postText" placeholder="Écrivez quelque chose..."></textarea><br><br>
+                <input type="file" id="fileInput"><br><br>
+                <button type="button" id="publishBtn">Publier</button>
+            </form>
+
+            <h2>Mes publications</h2>
+            <table id="tablePublications" border="1" cellpadding="8">
+                <thead>
+                    <tr>
+                        <th>Texte</th>
+                        <th>Fichier</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="myPostsBody"></tbody>
+            </table>
+
+        </section>
+
+        <!-- SECTION : Feed -->
+        <section id="feed-section" style="display:none;">
+            <h2>Publications récentes</h2>
+            <div id="feed-container"></div>
+        </section>
+
+    </div>
+
+    <script src="communautefront.js"></script>
+
+</body>
+</html>
