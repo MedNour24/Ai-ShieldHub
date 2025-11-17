@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cybersecurity Quiz</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1a0b2e, #2d1b4e, #1a0b2e);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            circle at 20% 50%,
+            rgba(168, 85, 247, 0.15),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 80% 50%,
+            rgba(236, 72, 153, 0.15),
+            transparent 40%
+          );
+        pointer-events: none;
+      }
+
+      .quiz-container {
+        background: rgba(30, 20, 50, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5),
+          0 0 100px rgba(168, 85, 247, 0.1);
+        padding: 30px 35px;
+        max-width: 900px;
+        width: 100%;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 1;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .quiz-header {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      .quiz-header h1 {
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        margin-bottom: 12px;
+        font-size: 32px;
+        text-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
+      }
+
+      .quiz-header p {
+        color: #c4b5fd;
+        font-size: 16px;
+        line-height: 1.4;
+      }
+
+      .quiz-progress {
+        height: 6px;
+        background: rgba(168, 85, 247, 0.1);
+        border-radius: 10px;
+        margin-bottom: 25px;
+        overflow: hidden;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+      }
+
+      .quiz-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #a855f7, #ec4899);
+        width: 0%;
+        transition: width 0.5s ease;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+      }
+
+      .question-container {
+        margin-bottom: 25px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .question-number {
+        font-size: 13px;
+        color: #a855f7;
+        margin-bottom: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: inline-block;
+        padding: 4px 12px;
+        background: rgba(168, 85, 247, 0.15);
+        border-radius: 20px;
+        border: 1px solid rgba(168, 85, 247, 0.3);
+      }
+
+      .question-text {
+        font-size: 22px;
+        font-weight: 600;
+        color: #f3e8ff;
+        margin-bottom: 20px;
+        line-height: 1.3;
+      }
+
+      .options-container {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .option {
+        background: rgba(45, 27, 78, 0.6);
+        border: 2px solid rgba(168, 85, 247, 0.3);
+        border-radius: 12px;
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: all 0.4s ease;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .option::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(168, 85, 247, 0.2),
+          transparent
+        );
+        transition: left 0.6s ease;
+      }
+
+      .option:hover::before {
+        left: 100%;
+      }
+
+      .option:hover {
+        background: rgba(60, 40, 100, 0.8);
+        border-color: #a855f7;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4);
+      }
+
+      .option.selected {
+        border-color: #a855f7;
+        background: rgba(168, 85, 247, 0.2);
+        box-shadow: 0 8px 25px rgba(168, 85, 247, 0.5);
+      }
+
+      .option input[type="radio"] {
+        margin-right: 15px;
+        width: 18px;
+        height: 18px;
+        accent-color: #a855f7;
+      }
+
+      .option label {
+        cursor: pointer;
+        font-size: 16px;
+        color: #e9d5ff;
+        font-weight: 500;
+        flex: 1;
+      }
+
+      .error-message {
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.1);
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+        display: none;
+        font-size: 14px;
+      }
+
+      .quiz-navigation {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .btn-quiz {
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.4s ease;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+      }
+
+      .btn-quiz:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+      }
+
+      .btn-quiz:disabled {
+        background: rgba(100, 100, 120, 0.3);
+        color: #8b7fa8;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .results-container {
+        text-align: center;
+        padding: 30px 20px;
+      }
+
+      .results-container h2 {
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 25px;
+        font-size: 30px;
+      }
+
+      .score-circle {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 30px;
+        color: #a855f7;
+        font-size: 40px;
+        font-weight: 700;
+        border: 3px solid #a855f7;
+        box-shadow: 0 0 40px rgba(168, 85, 247, 0.5),
+          inset 0 0 30px rgba(168, 85, 247, 0.1);
+      }
+
+      .feedback-message {
+        font-size: 17px;
+        margin-bottom: 30px;
+        color: #e9d5ff;
+        line-height: 1.5;
+      }
+
+      .loading {
+        text-align: center;
+        color: #a855f7;
+        font-size: 20px;
+        padding: 30px;
+      }
+
+      .debug-info {
+        background: rgba(255, 107, 107, 0.1);
+        border: 1px solid #ff6b6b;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        color: #ff6b6b;
+        font-size: 14px;
+        text-align: left;
+      }
+
+      @media (max-width: 768px) {
+        .quiz-container {
+          padding: 25px 20px;
+          max-height: 95vh;
+        }
+
+        .quiz-header h1 {
+          font-size: 26px;
+        }
+
+        .quiz-header p {
+          font-size: 14px;
+        }
+
+        .question-text {
+          font-size: 19px;
+        }
+
+        .option {
+          padding: 12px 16px;
+        }
+
+        .option label {
+          font-size: 14px;
+        }
+
+        .quiz-navigation {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .btn-quiz {
+          width: 100%;
+          padding: 12px 20px;
+        }
+
+        .score-circle {
+          width: 120px;
+          height: 120px;
+          font-size: 34px;
+        }
+
+        .feedback-message {
+          font-size: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="quiz-container">
+      <div class="quiz-header">
+        <h1>Test Your Cybersecurity Knowledge</h1>
+        <p id="quizDescription">
+          Discover your mastery level of essential digital security concepts
+        </p>
+      </div>
+
+      <div class="quiz-progress">
+        <div class="quiz-progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="error-message" id="errorMessage"></div>
+
+      <div id="quizContent">
+        <div class="loading">
+          <i class="fas fa-spinner fa-spin"></i> Loading quiz...
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let quizData = null;
+      let questionsData = [];
+      let currentQuestion = 0;
+      let userAnswers = [];
+      let quizId = 1; // ID du quiz à charger
+
+      // Configuration de l'URL de base
+      const API_BASE = "/test/controller/api_quiz.php";
+
+      // Charger le quiz au chargement de la page
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("Page chargée, début du chargement du quiz...");
+        loadQuiz();
+      });
+
+      // Charger les données du quiz depuis le serveur
+      async function loadQuiz() {
+        try {
+          console.log("Chargement du quiz ID:", quizId);
+
+          // Charger les informations du quiz
+          const quizUrl = `${API_BASE}?action=getQuiz&id=${quizId}`;
+          console.log("URL quiz:", quizUrl);
+
+          const quizResponse = await fetch(quizUrl);
+          console.log("Quiz response status:", quizResponse.status);
+
+          const quizText = await quizResponse.text();
+          console.log("Quiz response text:", quizText);
+
+          if (!quizResponse.ok) {
+            throw new Error(`Failed to load quiz (${quizResponse.status})`);
+          }
+
+          try {
+            quizData = JSON.parse(quizText);
+            console.log("Quiz data:", quizData);
+          } catch (e) {
+            console.error("Erreur parsing JSON quiz:", e);
+            showError(
+              "Invalid JSON from server: " + quizText.substring(0, 200)
+            );
+            return;
+          }
+
+          // Charger les questions
+          const questionsUrl = `${API_BASE}?action=getQuestions&id=${quizId}`;
+          console.log("URL questions:", questionsUrl);
+
+          const questionsResponse = await fetch(questionsUrl);
+          console.log("Questions response status:", questionsResponse.status);
+
+          const questionsText = await questionsResponse.text();
+          console.log("Questions response text:", questionsText);
+
+          if (!questionsResponse.ok) {
+            throw new Error(
+              `Failed to load questions (${questionsResponse.status})`
+            );
+          }
+
+          try {
+            questionsData = JSON.parse(questionsText);
+            console.log("Questions data:", questionsData);
+            console.log("Nombre de questions:", questionsData.length);
+          } catch (e) {
+            console.error("Erreur parsing JSON questions:", e);
+            showError(
+              "Invalid JSON from server: " + questionsText.substring(0, 200)
+            );
+            return;
+          }
+
+          if (!questionsData || questionsData.length === 0) {
+            showError(
+              "No questions found for this quiz. Please add questions in the admin panel."
+            );
+            return;
+          }
+
+          // Mettre à jour la description
+          if (quizData && quizData.description) {
+            document.getElementById("quizDescription").textContent =
+              quizData.description;
+          }
+
+          // Afficher la première question
+          displayQuestion();
+        } catch (error) {
+          console.error("Erreur complète:", error);
+          showError("Error loading quiz: " + error.message);
+
+          // Afficher des informations de debug
+          const quizContent = document.getElementById("quizContent");
+          quizContent.innerHTML += `
+                    <div class="debug-info">
+                        <strong>Debug Information:</strong><br>
+                        API URL: ${API_BASE}<br>
+                        Quiz ID: ${quizId}<br>
+                        Error: ${error.message}<br>
+                        <br>
+                        <strong>Vérifications à faire:</strong><br>
+                        1. Vérifiez que le fichier Controller/api_quiz.php existe<br>
+                        2. Testez directement: <a href="${API_BASE}?action=getQuiz&id=${quizId}" target="_blank" style="color: #64ffda;">Cliquez ici</a><br>
+                        3. Vérifiez que la base de données contient des données<br>
+                        4. Vérifiez la console du navigateur (F12) pour plus de détails
+                    </div>
+                `;
+        }
+      }
+
+      // Afficher une question
+      function displayQuestion() {
+        const quizContent = document.getElementById("quizContent");
+        const progressBar = document.getElementById("progressBar");
+
+        // Mettre à jour la barre de progression
+        progressBar.style.width = `${
+          (currentQuestion / questionsData.length) * 100
+        }%`;
+
+        if (currentQuestion < questionsData.length) {
+          const question = questionsData[currentQuestion];
+
+          quizContent.innerHTML = `
+                    <div class="question-container">
+                        <div class="question-number">Question ${
+                          currentQuestion + 1
+                        } of ${questionsData.length}</div>
+                        <div class="question-text">${escapeHtml(
+                          question.question
+                        )}</div>
+                        <div class="options-container">
+                            <div class="option" onclick="selectOption(1)">
+                                <input type="radio" id="option1" name="answer" value="1">
+                                <label for="option1">${escapeHtml(
+                                  question.option1
+                                )}</label>
+                            </div>
+                            <div class="option" onclick="selectOption(2)">
+                                <input type="radio" id="option2" name="answer" value="2">
+                                <label for="option2">${escapeHtml(
+                                  question.option2
+                                )}</label>
+                            </div>
+                            <div class="option" onclick="selectOption(3)">
+                                <input type="radio" id="option3" name="answer" value="3">
+                                <label for="option3">${escapeHtml(
+                                  question.option3
+                                )}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="quiz-navigation">
+                        <button class="btn-quiz" onclick="previousQuestion()" ${
+                          currentQuestion === 0 ? "disabled" : ""
+                        }>
+                            <i class="fa-solid fa-arrow-left"></i> Previous
+                        </button>
+                        <button class="btn-quiz" onclick="nextQuestion()" id="nextButton" disabled>
+                            ${
+                              currentQuestion === questionsData.length - 1
+                                ? "Finish"
+                                : "Next"
+                            } <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+
+          // Restaurer la sélection si elle existe
+          if (userAnswers[currentQuestion] !== undefined) {
+            selectOption(userAnswers[currentQuestion]);
+          }
+        } else {
+          showResults();
+        }
+      }
+
+      // Sélectionner une option
+      function selectOption(optionNumber) {
+        const options = document.querySelectorAll(".option");
+        options.forEach((opt) => opt.classList.remove("selected"));
+
+        const selectedOption = options[optionNumber - 1];
+        selectedOption.classList.add("selected");
+
+        const radio = document.getElementById(`option${optionNumber}`);
+        if (radio) {
+          radio.checked = true;
+        }
+
+        userAnswers[currentQuestion] = optionNumber;
+        document.getElementById("nextButton").disabled = false;
+      }
+
+      // Question précédente
+      function previousQuestion() {
+        if (currentQuestion > 0) {
+          currentQuestion--;
+          displayQuestion();
+        }
+      }
+
+      // Question suivante
+      function nextQuestion() {
+        if (userAnswers[currentQuestion] === undefined) {
+          showError("Please select an answer before continuing");
+          return;
+        }
+
+        hideError();
+
+        if (currentQuestion < questionsData.length - 1) {
+          currentQuestion++;
+          displayQuestion();
+        } else {
+          currentQuestion++;
+          displayQuestion();
+        }
+      }
+
+      // Afficher les résultats
+      function showResults() {
+        const quizContent = document.getElementById("quizContent");
+        const progressBar = document.getElementById("progressBar");
+
+        let score = 0;
+        userAnswers.forEach((answer, index) => {
+          if (answer == questionsData[index].reponse_correcte) {
+            score++;
+          }
+        });
+
+        let percentage = (score / questionsData.length) * 100;
+        let message = "";
+
+        if (percentage >= 90) {
+          message =
+            "Excellent! You perfectly master the basics of cybersecurity.";
+        } else if (percentage >= 70) {
+          message = "Very good! You have solid cybersecurity knowledge.";
+        } else if (percentage >= 50) {
+          message =
+            "Not bad! You have the basics but there is still room for improvement.";
+        } else {
+          message =
+            "It would be beneficial to strengthen your cybersecurity knowledge.";
+        }
+
+        progressBar.style.width = "100%";
+        quizContent.innerHTML = `
+                <div class="results-container">
+                    <h2>Quiz Results</h2>
+                    <div class="score-circle">${score}/${questionsData.length}</div>
+                    <div class="feedback-message">${message}</div>
+                    <button class="btn-quiz" onclick="restartQuiz()">
+                        <i class="fa-solid fa-rotate-right"></i> Restart Quiz
+                    </button>
+                    <button class="btn-quiz" onclick="restartQuiz()">
+                        <a href="/test/index1.html" style="color: white; text-decoration: none;">
+                            <i class="fa-solid fa-home"></i> Return to Home</a>
+                    </button>
+                </div>
+            `;
+      }
+
+      // Redémarrer le quiz
+      function restartQuiz() {
+        currentQuestion = 0;
+        userAnswers = [];
+        displayQuestion();
+      }
+
+      // Afficher un message d'erreur
+      function showError(message) {
+        const errorElement = document.getElementById("errorMessage");
+        errorElement.textContent = message;
+        errorElement.style.display = "block";
+      }
+
+      // Masquer le message d'erreur
+      function hideError() {
+        document.getElementById("errorMessage").style.display = "none";
+      }
+
+      // Échapper le HTML pour la sécurité
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>
