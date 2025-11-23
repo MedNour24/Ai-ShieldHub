@@ -1,6 +1,10 @@
 <?php
 session_start();
+
+// Inclure la configuration
 require_once '../../config.php';
+
+// Connexion à la base de données
 try {
     $database = new Database();
     $pdo = $database->getConnection();
@@ -47,7 +51,7 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
-    <!-- Styles pour la page d'accueil -->
+    <!-- Styles pour la page de connexion/inscription -->
     <style>
     :root {
         --primary-violet: #6c63ff;
@@ -671,6 +675,34 @@ try {
         font-size: 18px;
     }
     
+    /* Styles pour les messages d'erreur de validation */
+    .error-message {
+        color: var(--error-red);
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .input-error {
+        border-color: var(--error-red) !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
+    }
+    
+    .input-success {
+        border-color: var(--success-green) !important;
+    }
+    
+    /* Champ rôle caché */
+    .role-field {
+        display: none !important;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
     @keyframes float {
         0%, 100% { transform: translateY(0) rotate(0deg); }
         50% { transform: translateY(-20px) rotate(180deg); }
@@ -684,6 +716,169 @@ try {
     @keyframes textScroll {
         0% { transform: translateX(100%); }
         100% { transform: translateX(-100%); }
+    }
+    
+    /* Styles pour le formulaire de réinitialisation combiné */
+    .reset-combined-form {
+        display: none;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--medium-gray);
+        z-index: 0;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--medium-gray);
+        color: var(--dark-gray);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .step.active .step-circle {
+        background: linear-gradient(135deg, var(--primary-violet), var(--primary-blue));
+        color: white;
+        box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+        transform: scale(1.1);
+    }
+
+    .step.completed .step-circle {
+        background: var(--success-green);
+        color: white;
+    }
+
+    .step-label {
+        font-size: 12px;
+        color: var(--dark-gray);
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: var(--primary-violet);
+        font-weight: 600;
+    }
+
+    .form-step {
+        display: none;
+    }
+
+    .form-step.active {
+        display: block;
+        animation: slideInRight 0.4s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .code-input-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .code-digit {
+        width: 50px;
+        height: 60px;
+        font-size: 28px;
+        font-weight: 700;
+        text-align: center;
+        border: 2px solid var(--medium-gray);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .code-digit:focus {
+        border-color: var(--primary-violet);
+        box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
+        outline: none;
+    }
+
+    .timer-container {
+        text-align: center;
+        margin: 20px 0;
+        font-size: 14px;
+        color: var(--dark-gray);
+    }
+
+    .timer {
+        font-weight: 700;
+        color: var(--primary-violet);
+        font-size: 16px;
+    }
+
+    .password-strength {
+        margin-top: 10px;
+    }
+
+    .strength-bar {
+        height: 6px;
+        background: var(--medium-gray);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+
+    .strength-fill {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s ease;
+        border-radius: 3px;
+    }
+
+    .strength-weak .strength-fill {
+        width: 33%;
+        background: var(--error-red);
+    }
+
+    .strength-medium .strength-fill {
+        width: 66%;
+        background: #fbbf24;
+    }
+
+    .strength-strong .strength-fill {
+        width: 100%;
+        background: var(--success-green);
+    }
+
+    .strength-text {
+        font-size: 12px;
+        font-weight: 600;
     }
     
     @media (max-width: 768px) {
@@ -740,11 +935,21 @@ try {
         .graphics-content p {
             font-size: 14px;
         }
+        
+        .code-input-group {
+            gap: 5px;
+        }
+        
+        .code-digit {
+            width: 40px;
+            height: 50px;
+            font-size: 22px;
+        }
     }
 </style>
 </head>
 <body>
-<!-- connexion/inscription -->
+<!-- Modal de connexion/inscription -->
 <div class="auth-modal" id="authModal">
     <div class="auth-container">
         <button class="close-auth" id="closeAuth">&times;</button>
@@ -767,6 +972,7 @@ try {
                         <input type="text" id="registerName" name="name" placeholder="Enter your full name">
                         <i class="fas fa-user"></i>
                     </div>
+                    <div class="error-message" id="nameError"></div>
                 </div>
                 
                 <div class="form-group">
@@ -775,6 +981,7 @@ try {
                         <input type="text" id="registerEmail" name="email" placeholder="Enter your email address">
                         <i class="fas fa-envelope"></i>
                     </div>
+                    <div class="error-message" id="emailError"></div>
                 </div>
                 
                 <div class="form-group">
@@ -786,6 +993,7 @@ try {
                             <i class="fas fa-eye"></i>
                         </span>
                     </div>
+                    <div class="error-message" id="passwordError"></div>
                 </div>
                 
                 <div class="form-group">
@@ -797,18 +1005,20 @@ try {
                             <i class="fas fa-eye"></i>
                         </span>
                     </div>
+                    <div class="error-message" id="confirmPasswordError"></div>
                 </div>
 
-                <div class="form-group">
+                <!-- Champ rôle caché avec valeur par défaut -->
+                <div class="form-group role-field">
                     <label for="registerRole">Role</label>
                     <div class="input-with-icon">
                         <select id="registerRole" name="role">
-                            <option value="">Select your role</option>
-                            <option value="student">Student</option>
-                            <option value="admin">Admin</option>
+                            <option value="student" selected>Student</option>
+                            <option value="admin" style="display:none">Admin</option>
                         </select>
                         <i class="fas fa-user-tag"></i>
                     </div>
+                    <div class="error-message" id="roleError"></div>
                 </div>
                 
                 <div class="remember-forgot">
@@ -817,6 +1027,7 @@ try {
                         <label for="registerTerms">I accept the terms of use</label>
                     </div>
                 </div>
+                <div class="error-message" id="termsError"></div>
                 
                 <button type="submit" class="auth-btn">Create Account</button>
             </form>
@@ -826,7 +1037,7 @@ try {
             </div>
         </div>
         
-        <!-- connexion -->
+        <!-- Formulaire de connexion -->
         <div class="auth-form-container" id="loginForm" style="display: none;">
             <div class="auth-header">
                 <h1>Welcome Back</h1>
@@ -844,6 +1055,7 @@ try {
                         <input type="text" id="loginEmail" name="email" placeholder="Enter your email">
                         <i class="fas fa-envelope"></i>
                     </div>
+                    <div class="error-message" id="loginEmailError"></div>
                 </div>
                 
                 <div class="form-group">
@@ -855,6 +1067,7 @@ try {
                             <i class="fas fa-eye"></i>
                         </span>
                     </div>
+                    <div class="error-message" id="loginPasswordError"></div>
                 </div>
                 
                 <div class="remember-forgot">
@@ -905,6 +1118,128 @@ try {
     </div>
 </div>
 
+<!-- Modal combinée pour le reset password -->
+<div class="auth-modal" id="resetPasswordCombinedModal" style="display: none;">
+    <div class="auth-container" style="max-width: 550px;">
+        <button class="close-auth" id="closeResetCombined">&times;</button>
+        
+        <div class="auth-form-container reset-combined-form" style="display: flex;">
+            <div class="auth-header">
+                <h1>Reset Password</h1>
+                <p>Follow the steps to reset your password</p>
+            </div>
+            
+            <!-- Indicateur d'étapes -->
+            <div class="step-indicator">
+                <div class="step active" id="stepIndicator1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Email</div>
+                </div>
+                <div class="step" id="stepIndicator2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Verify</div>
+                </div>
+                <div class="step" id="stepIndicator3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">New Password</div>
+                </div>
+            </div>
+            
+            <div id="resetCombinedAlerts"></div>
+            
+            <!-- Étape 1: Email -->
+            <div class="form-step active" id="emailStep">
+                <form id="emailStepForm" novalidate>
+                    <div class="form-group">
+                        <label for="resetEmailInput">Email Address</label>
+                        <div class="input-with-icon">
+                            <input type="email" id="resetEmailInput" name="email" placeholder="Enter your email" required autocomplete="email">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="error-message" id="resetEmailInputError"></div>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">Send Verification Code</button>
+                </form>
+            </div>
+            
+            <!-- Étape 2: Code de vérification -->
+            <div class="form-step" id="codeStep">
+                <form id="codeStepForm" novalidate>
+                    <div class="form-group">
+                        <label>Verification Code</label>
+                        <p style="font-size: 14px; color: var(--dark-gray); margin-bottom: 15px;">
+                            Enter the 6-digit code sent to your email
+                        </p>
+                        <div class="code-input-group">
+                            <input type="text" class="code-digit" maxlength="1" id="digit1" autocomplete="off">
+                            <input type="text" class="code-digit" maxlength="1" id="digit2" autocomplete="off">
+                            <input type="text" class="code-digit" maxlength="1" id="digit3" autocomplete="off">
+                            <input type="text" class="code-digit" maxlength="1" id="digit4" autocomplete="off">
+                            <input type="text" class="code-digit" maxlength="1" id="digit5" autocomplete="off">
+                            <input type="text" class="code-digit" maxlength="1" id="digit6" autocomplete="off">
+                        </div>
+                        <input type="hidden" id="fullCodeInput" name="code">
+                        <div class="error-message" id="codeStepError"></div>
+                        
+                        <div class="timer-container">
+                            <p>Code expires in: <span class="timer" id="codeTimer">15:00</span></p>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">Verify Code</button>
+                    
+                    <div class="switch-mode-link">
+                        Didn't receive the code? <a href="#" class="resend-code-combined">Resend code</a>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Étape 3: Nouveau mot de passe -->
+            <div class="form-step" id="passwordStep">
+                <form id="passwordStepForm" novalidate>
+                    <div class="form-group">
+                        <label for="finalNewPassword">New Password</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="finalNewPassword" name="new_password" placeholder="Enter new password" required autocomplete="new-password">
+                            <i class="fas fa-lock"></i>
+                            <span class="password-toggle" data-target="finalNewPassword">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"></div>
+                            </div>
+                            <div class="strength-text"></div>
+                        </div>
+                        <div class="error-message" id="finalNewPasswordError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="finalConfirmPassword">Confirm New Password</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="finalConfirmPassword" name="confirm_password" placeholder="Confirm new password" required autocomplete="new-password">
+                            <i class="fas fa-lock"></i>
+                            <span class="password-toggle" data-target="finalConfirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                        <div class="error-message" id="finalConfirmPasswordError"></div>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">Reset Password</button>
+                </form>
+            </div>
+            
+            <div class="switch-mode-link">
+                Remember your password? <a href="#" class="back-to-login-combined">Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Le reste de votre contenu HTML existant -->
 <!-- Header -->
 <!-- Back to top button -->
 <a id="button"></a>
@@ -975,7 +1310,7 @@ try {
         </div>
     </header>
 
-    <!-- Le reste de contenu existant -->
+    <!-- Le reste de votre contenu existant -->
     <section class="banner-section">
         <div class="container position-relative">
             <div class="row">
@@ -1005,7 +1340,7 @@ try {
     </section>
 </div>
 
-<!-- Le reste de code HTML existant -->
+<!-- Le reste de votre code HTML existant -->
 <!-- Logos -->
 <div class="logo-section2">
     <div class="container">
@@ -1146,6 +1481,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const switchToLoginBtns = document.querySelectorAll('.switch-to-login');
     const switchToRegisterBtns = document.querySelectorAll('.switch-to-register');
     
+    // Fonctions de validation
+    function validateName(name) {
+        const nameRegex = /^[a-zA-ZÀ-ÿ\s]{2,50}$/;
+        return nameRegex.test(name.trim());
+    }
+
+    function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email.trim());
+    }
+
+    function validatePassword(password) {
+        return password.length >= 6;
+    }
+
+    function validateConfirmPassword(password, confirmPassword) {
+        return password === confirmPassword;
+    }
+
+    function validateRole(role) {
+        // Toujours valide car le rôle est défini par défaut
+        return true;
+    }
+
+    function validateTerms(termsChecked) {
+        return termsChecked;
+    }
+
+    // Fonction pour afficher/masquer les erreurs
+    function showError(fieldId, message) {
+        const errorElement = document.getElementById(fieldId);
+        const inputElement = document.getElementById(fieldId.replace('Error', ''));
+        
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        inputElement.classList.add('input-error');
+        inputElement.classList.remove('input-success');
+    }
+
+    function hideError(fieldId) {
+        const errorElement = document.getElementById(fieldId);
+        const inputElement = document.getElementById(fieldId.replace('Error', ''));
+        
+        errorElement.style.display = 'none';
+        inputElement.classList.remove('input-error');
+        inputElement.classList.add('input-success');
+    }
+
     // Ouvrir la modal avec le formulaire d'inscription par défaut
     openLogin.addEventListener('click', function(e) {
         e.preventDefault();
@@ -1158,6 +1541,7 @@ document.addEventListener('DOMContentLoaded', function() {
     closeAuth.addEventListener('click', function() {
         authModal.style.display = 'none';
         document.body.style.overflow = 'auto';
+        resetForms();
     });
     
     // Fermer en cliquant à l'extérieur
@@ -1165,6 +1549,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target === authModal) {
             authModal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            resetForms();
         }
     });
     
@@ -1188,12 +1573,14 @@ document.addEventListener('DOMContentLoaded', function() {
         registerFormContainer.style.display = 'none';
         loginFormContainer.style.display = 'flex';
         clearAlerts();
+        resetValidation();
     }
     
     function showRegisterForm() {
         loginFormContainer.style.display = 'none';
         registerFormContainer.style.display = 'flex';
         clearAlerts();
+        resetValidation();
     }
     
     function clearAlerts() {
@@ -1201,77 +1588,25 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('loginAlerts').innerHTML = '';
     }
     
-    // Fonction de validation personnalisée
-    function validateForm(formId) {
-        const form = document.getElementById(formId);
-        const inputs = form.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), select');
-        let isValid = true;
-        let errors = [];
-        
-        inputs.forEach(input => {
-            const value = input.value.trim();
-            const name = input.name;
-            
-            // Vérifier si le champ est vide
-            if (!value && name !== 'remember') {
-                isValid = false;
-                errors.push(`${input.previousElementSibling.textContent} is required`);
-                input.style.borderColor = 'var(--error-red)';
-            } else {
-                input.style.borderColor = '';
-            }
-            
-            // Validation de l'email
-            if (name === 'email' && value) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(value)) {
-                    isValid = false;
-                    errors.push('Please enter a valid email address');
-                    input.style.borderColor = 'var(--error-red)';
-                }
-            }
-            
-            // Validation du mot de passe 
-            if (formId === 'registrationForm' && name === 'password' && value) {
-                if (value.length < 6) {
-                    isValid = false;
-                    errors.push('Password must be at least 6 characters');
-                    input.style.borderColor = 'var(--error-red)';
-                }
-            }
-            
-            // Validation de la confirmation du mot de passe
-            if (formId === 'registrationForm' && name === 'confirmPassword' && value) {
-                const password = document.getElementById('registerPassword').value;
-                if (value !== password) {
-                    isValid = false;
-                    errors.push('Passwords do not match');
-                    input.style.borderColor = 'var(--error-red)';
-                }
-            }
+    function resetValidation() {
+        // Réinitialiser tous les messages d'erreur et styles
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(error => {
+            error.style.display = 'none';
         });
         
-        // Vérifier les conditions d'utilisation (si inscription)
-        if (formId === 'registrationForm') {
-            const termsCheckbox = document.getElementById('registerTerms');
-            if (!termsCheckbox.checked) {
-                isValid = false;
-                errors.push('You must accept the terms of use');
-            }
-        }
-        
-        return { isValid, errors };
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.classList.remove('input-error');
+            input.classList.remove('input-success');
+        });
     }
     
-    function showErrors(alertsContainerId, errors) {
-        const alertsContainer = document.getElementById(alertsContainerId);
-        const errorHtml = errors.map(error => `
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>${error}</span>
-            </div>
-        `).join('');
-        alertsContainer.innerHTML = errorHtml;
+    function resetForms() {
+        document.getElementById('registrationForm').reset();
+        document.getElementById('signinForm').reset();
+        resetValidation();
+        clearAlerts();
     }
     
     // Toggle pour afficher/masquer les mots de passe
@@ -1292,74 +1627,190 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // VALIDATION EN TEMPS RÉEL POUR L'INSCRIPTION
     
+    // Validation du nom
+    document.getElementById('registerName').addEventListener('blur', function() {
+        if (this.value.trim() === '') {
+            showError('nameError', 'Full name is required');
+        } else if (!validateName(this.value)) {
+            showError('nameError', 'Please enter a valid name (2-50 characters, letters and spaces only)');
+        } else {
+            hideError('nameError');
+        }
+    });
+
+    // Validation de l'email
+    document.getElementById('registerEmail').addEventListener('blur', function() {
+        if (this.value.trim() === '') {
+            showError('emailError', 'Email address is required');
+        } else if (!validateEmail(this.value)) {
+            showError('emailError', 'Please enter a valid email address');
+        } else {
+            hideError('emailError');
+        }
+    });
+
+    // Validation du mot de passe
+    document.getElementById('registerPassword').addEventListener('blur', function() {
+        if (this.value === '') {
+            showError('passwordError', 'Password is required');
+        } else if (!validatePassword(this.value)) {
+            showError('passwordError', 'Password must be at least 6 characters long');
+        } else {
+            hideError('passwordError');
+        }
+    });
+
+    // Validation de la confirmation du mot de passe
+    document.getElementById('registerConfirmPassword').addEventListener('blur', function() {
+        const password = document.getElementById('registerPassword').value;
+        if (this.value === '') {
+            showError('confirmPasswordError', 'Please confirm your password');
+        } else if (!validateConfirmPassword(password, this.value)) {
+            showError('confirmPasswordError', 'Passwords do not match');
+        } else {
+            hideError('confirmPasswordError');
+        }
+    });
+
+    // Pas de validation en temps réel pour le rôle car il est caché et défini par défaut
+
+    // Validation des conditions d'utilisation
+    document.getElementById('registerTerms').addEventListener('change', function() {
+        if (!validateTerms(this.checked)) {
+            showError('termsError', 'You must accept the terms of use');
+        } else {
+            hideError('termsError');
+        }
+    });
+
+    // VALIDATION EN TEMPS RÉEL POUR LA CONNEXION
+    
+    // Validation de l'email de connexion
+    document.getElementById('loginEmail').addEventListener('blur', function() {
+        if (this.value.trim() === '') {
+            showError('loginEmailError', 'Email address is required');
+        } else if (!validateEmail(this.value)) {
+            showError('loginEmailError', 'Please enter a valid email address');
+        } else {
+            hideError('loginEmailError');
+        }
+    });
+
+    // Validation du mot de passe de connexion
+    document.getElementById('loginPassword').addEventListener('blur', function() {
+        if (this.value === '') {
+            showError('loginPasswordError', 'Password is required');
+        } else {
+            hideError('loginPasswordError');
+        }
+    });
+
     // Soumission du formulaire d'inscription
     document.getElementById('registrationForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // Validation côté client
-        const validation = validateForm('registrationForm');
-        if (!validation.isValid) {
-            showErrors('registerAlerts', validation.errors);
-            return;
+        // Forcer la valeur du rôle à "student"
+        document.getElementById('registerRole').value = 'student';
+        
+        // Valider tous les champs
+        const name = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        const role = document.getElementById('registerRole').value; // Toujours "student"
+        const termsChecked = document.getElementById('registerTerms').checked;
+        
+        let isValid = true;
+        
+        if (!validateName(name)) {
+            showError('nameError', 'Please enter a valid name (2-50 characters, letters and spaces only)');
+            isValid = false;
         }
         
-        const formData = new FormData(this);
-        const submitBtn = this.querySelector('.auth-btn');
-        const originalText = submitBtn.textContent;
+        if (!validateEmail(email)) {
+            showError('emailError', 'Please enter a valid email address');
+            isValid = false;
+        }
         
-        submitBtn.textContent = 'Creating Account...';
-        submitBtn.disabled = true;
+        if (!validatePassword(password)) {
+            showError('passwordError', 'Password must be at least 6 characters long');
+            isValid = false;
+        }
         
-        fetch('../../controller/UserController.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            const alertsContainer = document.getElementById('registerAlerts');
+        if (!validateConfirmPassword(password, confirmPassword)) {
+            showError('confirmPasswordError', 'Passwords do not match');
+            isValid = false;
+        }
+        
+        // Pas de validation du rôle nécessaire car il est toujours "student"
+        
+        if (!validateTerms(termsChecked)) {
+            showError('termsError', 'You must accept the terms of use');
+            isValid = false;
+        }
+        
+        if (isValid) {
+            // Soumettre le formulaire si tout est valide
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('.auth-btn');
+            const originalText = submitBtn.textContent;
             
-            if (data.success) {
-                alertsContainer.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <span>${data.message}</span>
-                    </div>
-                `;
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
+            
+            fetch('../../controller/UserController.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const alertsContainer = document.getElementById('registerAlerts');
                 
-                setTimeout(() => {
-                    this.reset();
-                    showLoginForm();
-                    const loginAlerts = document.getElementById('loginAlerts');
-                    loginAlerts.innerHTML = `
+                if (data.success) {
+                    alertsContainer.innerHTML = `
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle"></i>
-                            <span>Account created successfully! Please sign in.</span>
+                            <span>${data.message}</span>
                         </div>
                     `;
-                }, 2000);
-            } else {
-                alertsContainer.innerHTML = `
+                    
+                    setTimeout(() => {
+                        resetForms();
+                        showLoginForm();
+                        const loginAlerts = document.getElementById('loginAlerts');
+                        loginAlerts.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Account created successfully! Please sign in.</span>
+                            </div>
+                        `;
+                    }, 2000);
+                } else {
+                    alertsContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>${data.message}</span>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('registerAlerts').innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-circle"></i>
-                        <span>${data.message}</span>
+                        <span>An error occurred during registration</span>
                     </div>
                 `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('registerAlerts').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span>An error occurred during registration</span>
-                </div>
-            `;
-        })
-        .finally(() => {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-        });
+            })
+            .finally(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        }
     });
     
     // Soumission du formulaire de connexion
@@ -1367,9 +1818,22 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         // Validation côté client
-        const validation = validateForm('signinForm');
-        if (!validation.isValid) {
-            showErrors('loginAlerts', validation.errors);
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        let isValid = true;
+        
+        if (!validateEmail(email)) {
+            showError('loginEmailError', 'Please enter a valid email address');
+            isValid = false;
+        }
+        
+        if (password === '') {
+            showError('loginPasswordError', 'Password is required');
+            isValid = false;
+        }
+        
+        if (!isValid) {
             return;
         }
         
@@ -1424,7 +1888,469 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = false;
         });
     });
+
+    // ============================================
+    // GESTION DU FORGOT PASSWORD COMBINÉ
+    // ============================================
+
+    // Variables globales pour le reset password
+    let currentStep = 1;
+    let resetEmailValue = '';
+    let resetCodeValue = '';
+    let timerInterval = null;
+    let timeRemaining = 900; // 15 minutes en secondes
+
+    const resetCombinedModal = document.getElementById('resetPasswordCombinedModal');
+    const closeResetCombined = document.getElementById('closeResetCombined');
+
+    // Ouvrir la modal depuis "Forgot password"
+    document.querySelector('.forgot-password').addEventListener('click', function(e) {
+        e.preventDefault();
+        authModal.style.display = 'none';
+        resetCombinedModal.style.display = 'flex';
+        goToStep(1);
+        startTimer();
+    });
+
+    // Fermer la modal
+    closeResetCombined.addEventListener('click', function() {
+        closeResetModal();
+    });
+
+    resetCombinedModal.addEventListener('click', function(e) {
+        if (e.target === resetCombinedModal) {
+            closeResetModal();
+        }
+    });
+
+    function closeResetModal() {
+        resetCombinedModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        resetResetForm();
+        stopTimer();
+    }
+
+    function resetResetForm() {
+        document.getElementById('emailStepForm').reset();
+        document.getElementById('codeStepForm').reset();
+        document.getElementById('passwordStepForm').reset();
+        document.getElementById('resetCombinedAlerts').innerHTML = '';
+        resetEmailValue = '';
+        resetCodeValue = '';
+        currentStep = 1;
+        goToStep(1);
+        clearAllCodeDigits();
+        resetValidation();
+    }
+
+    // Retour à la connexion
+    document.querySelectorAll('.back-to-login-combined').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeResetModal();
+            authModal.style.display = 'flex';
+            showLoginForm();
+        });
+    });
+
+    // Gestion des étapes
+    function goToStep(step) {
+        currentStep = step;
+        
+        // Masquer toutes les étapes
+        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.step').forEach(s => {
+            s.classList.remove('active');
+            s.classList.remove('completed');
+        });
+        
+        // Activer l'étape actuelle
+        if (step === 1) {
+            document.getElementById('emailStep').classList.add('active');
+            document.getElementById('stepIndicator1').classList.add('active');
+        } else if (step === 2) {
+            document.getElementById('codeStep').classList.add('active');
+            document.getElementById('stepIndicator1').classList.add('completed');
+            document.getElementById('stepIndicator2').classList.add('active');
+        } else if (step === 3) {
+            document.getElementById('passwordStep').classList.add('active');
+            document.getElementById('stepIndicator1').classList.add('completed');
+            document.getElementById('stepIndicator2').classList.add('completed');
+            document.getElementById('stepIndicator3').classList.add('active');
+        }
+    }
+
+    // Timer pour le code
+    function startTimer() {
+        timeRemaining = 900; // 15 minutes
+        updateTimerDisplay();
+        
+        timerInterval = setInterval(() => {
+            timeRemaining--;
+            updateTimerDisplay();
+            
+            if (timeRemaining <= 0) {
+                stopTimer();
+                showAlert('resetCombinedAlerts', 'danger', 'Verification code has expired. Please request a new one.');
+                goToStep(1);
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        const timerElement = document.getElementById('codeTimer');
+        if (timerElement) {
+            timerElement.textContent = display;
+            
+            // Changer la couleur si moins de 2 minutes
+            if (timeRemaining < 120) {
+                timerElement.style.color = 'var(--error-red)';
+            } else {
+                timerElement.style.color = 'var(--primary-violet)';
+            }
+        }
+    }
+
+    // ÉTAPE 1: Envoi de l'email
+    document.getElementById('emailStepForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('resetEmailInput').value.trim();
+        
+        if (!validateEmail(email)) {
+            showError('resetEmailInputError', 'Please enter a valid email address');
+            return;
+        }
+        
+        hideError('resetEmailInputError');
+        
+        const formData = new FormData();
+        formData.append('action', 'forgot_password');
+        formData.append('email', email);
+        
+        const submitBtn = this.querySelector('.auth-btn');
+        const originalText = submitBtn.textContent;
+        
+        submitBtn.textContent = 'Sending Code...';
+        submitBtn.disabled = true;
+        
+        fetch('../../controller/UserController.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resetEmailValue = email;
+                showAlert('resetCombinedAlerts', 'success', data.message);
+                
+                setTimeout(() => {
+                    document.getElementById('resetCombinedAlerts').innerHTML = '';
+                    goToStep(2);
+                    document.getElementById('digit1').focus();
+                }, 2000);
+            } else {
+                showAlert('resetCombinedAlerts', 'danger', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('resetCombinedAlerts', 'danger', 'An error occurred. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // ÉTAPE 2: Gestion des champs de code
+    const codeDigits = document.querySelectorAll('.code-digit');
+    
+    codeDigits.forEach((digit, index) => {
+        // Auto-focus sur le champ suivant
+        digit.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            
+            if (this.value.length === 1 && index < codeDigits.length - 1) {
+                codeDigits[index + 1].focus();
+            }
+            
+            updateFullCode();
+        });
+        
+        // Navigation avec les touches
+        digit.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                codeDigits[index - 1].focus();
+            }
+            
+            if (e.key === 'ArrowLeft' && index > 0) {
+                codeDigits[index - 1].focus();
+            }
+            
+            if (e.key === 'ArrowRight' && index < codeDigits.length - 1) {
+                codeDigits[index + 1].focus();
+            }
+        });
+        
+        // Paste handling
+        digit.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
+            
+            if (pasteData.length === 6) {
+                for (let i = 0; i < 6; i++) {
+                    codeDigits[i].value = pasteData[i];
+                }
+                codeDigits[5].focus();
+                updateFullCode();
+            }
+        });
+    });
+
+    function updateFullCode() {
+        let code = '';
+        codeDigits.forEach(digit => {
+            code += digit.value;
+        });
+        document.getElementById('fullCodeInput').value = code;
+        
+        // Auto-submit si 6 chiffres
+        if (code.length === 6) {
+            document.getElementById('codeStepForm').dispatchEvent(new Event('submit'));
+        }
+    }
+
+    function clearAllCodeDigits() {
+        codeDigits.forEach(digit => {
+            digit.value = '';
+        });
+        document.getElementById('fullCodeInput').value = '';
+    }
+
+    // Vérification du code
+    document.getElementById('codeStepForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const code = document.getElementById('fullCodeInput').value;
+        
+        if (code.length !== 6) {
+            showError('codeStepError', 'Please enter a complete 6-digit code');
+            return;
+        }
+        
+        hideError('codeStepError');
+        
+        const formData = new FormData();
+        formData.append('action', 'verify_code');
+        formData.append('email', resetEmailValue);
+        formData.append('code', code);
+        
+        const submitBtn = this.querySelector('.auth-btn');
+        const originalText = submitBtn.textContent;
+        
+        submitBtn.textContent = 'Verifying...';
+        submitBtn.disabled = true;
+        
+        fetch('../../controller/UserController.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resetCodeValue = code;
+                stopTimer();
+                showAlert('resetCombinedAlerts', 'success', data.message);
+                
+                setTimeout(() => {
+                    document.getElementById('resetCombinedAlerts').innerHTML = '';
+                    goToStep(3);
+                    document.getElementById('finalNewPassword').focus();
+                }, 1500);
+            } else {
+                showAlert('resetCombinedAlerts', 'danger', data.message);
+                clearAllCodeDigits();
+                document.getElementById('digit1').focus();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('resetCombinedAlerts', 'danger', 'An error occurred. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Resend code
+    document.querySelector('.resend-code-combined').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (!resetEmailValue) {
+            showAlert('resetCombinedAlerts', 'danger', 'Please start from the beginning.');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('action', 'forgot_password');
+        formData.append('email', resetEmailValue);
+        
+        fetch('../../controller/UserController.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('resetCombinedAlerts', 'success', 'A new code has been sent to your email.');
+                clearAllCodeDigits();
+                startTimer();
+                document.getElementById('digit1').focus();
+            } else {
+                showAlert('resetCombinedAlerts', 'danger', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    // ÉTAPE 3: Password strength indicator
+    document.getElementById('finalNewPassword').addEventListener('input', function() {
+        const password = this.value;
+        const strengthContainer = document.getElementById('passwordStrength');
+        const strengthText = strengthContainer.querySelector('.strength-text');
+        
+        strengthContainer.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
+        
+        if (password.length === 0) {
+            strengthText.textContent = '';
+            return;
+        }
+        
+        let strength = 0;
+        
+        if (password.length >= 6) strength++;
+        if (password.length >= 10) strength++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^a-zA-Z0-9]/.test(password)) strength++;
+        
+        if (strength <= 2) {
+            strengthContainer.classList.add('strength-weak');
+            strengthText.textContent = 'Weak password';
+            strengthText.style.color = 'var(--error-red)';
+        } else if (strength <= 4) {
+            strengthContainer.classList.add('strength-medium');
+            strengthText.textContent = 'Medium password';
+            strengthText.style.color = '#fbbf24';
+        } else {
+            strengthContainer.classList.add('strength-strong');
+            strengthText.textContent = 'Strong password';
+            strengthText.style.color = 'var(--success-green)';
+        }
+    });
+
+    // Réinitialisation finale du mot de passe
+    document.getElementById('passwordStepForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const newPassword = document.getElementById('finalNewPassword').value;
+        const confirmPassword = document.getElementById('finalConfirmPassword').value;
+        
+        let isValid = true;
+        
+        if (!validatePassword(newPassword)) {
+            showError('finalNewPasswordError', 'Password must be at least 6 characters long');
+            isValid = false;
+        } else {
+            hideError('finalNewPasswordError');
+        }
+        
+        if (newPassword !== confirmPassword) {
+            showError('finalConfirmPasswordError', 'Passwords do not match');
+            isValid = false;
+        } else {
+            hideError('finalConfirmPasswordError');
+        }
+        
+        if (!isValid) return;
+        
+        const formData = new FormData();
+        formData.append('action', 'reset_password');
+        formData.append('email', resetEmailValue);
+        formData.append('code', resetCodeValue);
+        formData.append('new_password', newPassword);
+        formData.append('confirm_password', confirmPassword);
+        
+        const submitBtn = this.querySelector('.auth-btn');
+        const originalText = submitBtn.textContent;
+        
+        submitBtn.textContent = 'Resetting Password...';
+        submitBtn.disabled = true;
+        
+        fetch('../../controller/UserController.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('resetCombinedAlerts', 'success', data.message);
+                
+                setTimeout(() => {
+                    closeResetModal();
+                    authModal.style.display = 'flex';
+                    showLoginForm();
+                    
+                    const loginAlerts = document.getElementById('loginAlerts');
+                    loginAlerts.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Password reset successfully! Please sign in with your new password.</span>
+                        </div>
+                    `;
+                }, 2000);
+            } else {
+                showAlert('resetCombinedAlerts', 'danger', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('resetCombinedAlerts', 'danger', 'An error occurred. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Fonction helper pour afficher les alertes
+    function showAlert(containerId, type, message) {
+        const container = document.getElementById(containerId);
+        const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        
+        container.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas ${iconClass}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+    }
 });
 </script>
+
 </body>
 </html>

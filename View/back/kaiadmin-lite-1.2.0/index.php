@@ -1,3 +1,22 @@
+<?php
+session_start();
+
+// Vérifier si l'utilisateur est connecté et est un admin
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    // Rediriger vers la page de connexion
+    header('Location: ../../future-ai/index.php');
+    exit;
+}
+
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+    // Si l'utilisateur n'est pas admin, le rediriger vers la page étudiante
+    header('Location: ../../future-ai/index2.php');
+    exit;
+}
+
+// Inclure la configuration
+require_once '../../../config.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -1105,7 +1124,7 @@
         }
 
         function escapeRegex(text) {
-          return text.replace(/[.*+?^${}()|[\]\\]/g, '\\          users.forEach(user =>');
+          return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
         function showSuccess(message) {

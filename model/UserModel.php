@@ -1,4 +1,9 @@
 <?php
+/**
+ * Modèle Utilisateur
+ * Gère toutes les opérations de base de données pour les utilisateurs
+ */
+
 class UserModel {
     private $db;
     
@@ -6,6 +11,9 @@ class UserModel {
         $this->db = $database;
     }
     
+    /**
+     * Créer un nouvel utilisateur
+     */
     public function createUser($name, $email, $password, $role) {
         try {
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -21,6 +29,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Récupérer un utilisateur par email
+     */
     public function getUserByEmail($email) {
         try {
             $sql = "SELECT * FROM users WHERE email = ?";
@@ -34,6 +45,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Récupérer tous les utilisateurs
+     */
     public function getAllUsers() {
         try {
             $sql = "SELECT id, name, email, role, status, created_at, updated_at 
@@ -48,6 +62,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Récupérer un utilisateur par ID
+     */
     public function getUserById($id) {
         try {
             $sql = "SELECT id, name, email, role, status, created_at, updated_at 
@@ -62,6 +79,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Mettre à jour un utilisateur
+     */
     public function updateUser($id, $name, $email, $role, $status) {
         try {
             $sql = "UPDATE users 
@@ -76,6 +96,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Mettre à jour le mot de passe
+     */
     public function updatePassword($id, $newPassword) {
         try {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
@@ -90,6 +113,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Mettre à jour la dernière connexion
+     */
     public function updateLastLogin($id) {
         try {
             $sql = "UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = ?";
@@ -102,6 +128,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Supprimer un utilisateur
+     */
     public function deleteUser($id) {
         try {
             $sql = "DELETE FROM users WHERE id = ?";
@@ -114,6 +143,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Vérifier si un email existe
+     */
     public function emailExists($email, $excludeUserId = null) {
         try {
             if ($excludeUserId) {
@@ -133,6 +165,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Compter les utilisateurs
+     */
     public function countUsers($role = null) {
         try {
             if ($role) {
@@ -152,6 +187,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Récupérer les utilisateurs actifs
+     */
     public function getActiveUsers() {
         try {
             $sql = "SELECT id, name, email, role, created_at, updated_at 
@@ -166,6 +204,9 @@ class UserModel {
         }
     }
     
+    /**
+     * Changer le statut d'un utilisateur
+     */
     public function changeUserStatus($id, $status) {
         try {
             $sql = "UPDATE users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
@@ -174,6 +215,109 @@ class UserModel {
             return $stmt->execute([$status, $id]);
         } catch(PDOException $e) {
             error_log("Erreur changement statut utilisateur: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // ============================================
+    // FONCTIONS POUR LA RÉINITIALISATION DU MOT DE PASSE
+    // ============================================
+    
+    /**
+     * Enregistrer un code de réinitialisation de mot de passe
+     */
+    public function savePasswordResetCode($userId, $code, $expiresAt) {
+        try {
+            // D'abord, supprimer les anciens codes pour cet utilisateur
+            $sqlDelete = "DELETE FROM password_resets WHERE user_id = ?";
+            $stmtDelete = $this->db->prepare($sqlDelete);
+            $stmtDelete->execute([$userId]);
+            
+            // Ensuite, insérer le nouveau code
+            $sql = "INSERT INTO password_resets (user_id, code, expires_at, created_at) 
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+            $stmt = $this->db->prepare($sql);
+            
+            return $stmt->execute([$userId, $code, $expiresAt]);
+        } catch(PDOException $e) {
+            error_log("Erreur enregistrement code reset: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Vérifier un code de réinitialisation de mot de passe
+     */
+    public function verifyPasswordResetCode($email, $code) {
+        try {
+            $sql = "SELECT pr.*, u.id as user_id, u.name, u.email 
+                    FROM password_resets pr
+                    INNER JOIN users u ON pr.user_id = u.id
+                    WHERE u.email = ? AND pr.code = ? AND pr.used = 0";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$email, $code]);
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$result) {
+                return [
+                    'valid' => false,
+                    'message' => 'Invalid verification code'
+                ];
+            }
+            
+            // Vérifier si le code a expiré
+            $now = new DateTime();
+            $expiresAt = new DateTime($result['expires_at']);
+            
+            if ($now > $expiresAt) {
+                return [
+                    'valid' => false,
+                    'message' => 'Verification code has expired. Please request a new one.'
+                ];
+            }
+            
+            return [
+                'valid' => true,
+                'user_id' => $result['user_id'],
+                'message' => 'Code verified successfully'
+            ];
+            
+        } catch(PDOException $e) {
+            error_log("Erreur vérification code reset: " . $e->getMessage());
+            return [
+                'valid' => false,
+                'message' => 'An error occurred during verification'
+            ];
+        }
+    }
+    
+    /**
+     * Invalider un code de réinitialisation (marquer comme utilisé)
+     */
+    public function invalidatePasswordResetCode($userId) {
+        try {
+            $sql = "UPDATE password_resets SET used = 1 WHERE user_id = ?";
+            $stmt = $this->db->prepare($sql);
+            
+            return $stmt->execute([$userId]);
+        } catch(PDOException $e) {
+            error_log("Erreur invalidation code reset: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Nettoyer les codes expirés (à exécuter périodiquement)
+     */
+    public function cleanExpiredResetCodes() {
+        try {
+            $sql = "DELETE FROM password_resets WHERE expires_at < NOW() OR used = 1";
+            $stmt = $this->db->prepare($sql);
+            
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            error_log("Erreur nettoyage codes expirés: " . $e->getMessage());
             return false;
         }
     }
