@@ -1,9 +1,5 @@
 <?php
-/**
- * Configuration de la base de données et des sessions
- * Fichier: config.php
- */
-
+// Activer le rapport d'erreurs pour le développement
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);

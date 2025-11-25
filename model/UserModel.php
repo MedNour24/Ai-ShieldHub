@@ -1,9 +1,4 @@
 <?php
-/**
- * Modèle Utilisateur
- * Gère toutes les opérations de base de données pour les utilisateurs
- */
-
 class UserModel {
     private $db;
     
@@ -60,25 +55,7 @@ class UserModel {
             error_log("Erreur récupération utilisateurs: " . $e->getMessage());
             return false;
         }
-    }
-    
-    /**
-     * Récupérer un utilisateur par ID
-     */
-    public function getUserById($id) {
-        try {
-            $sql = "SELECT id, name, email, role, status, created_at, updated_at 
-                    FROM users WHERE id = ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$id]);
-            
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) {
-            error_log("Erreur recherche utilisateur par ID: " . $e->getMessage());
-            return false;
         }
-    }
-    
     /**
      * Mettre à jour un utilisateur
      */
@@ -185,55 +162,16 @@ class UserModel {
             error_log("Erreur comptage utilisateurs: " . $e->getMessage());
             return 0;
         }
-    }
-    
-    /**
-     * Récupérer les utilisateurs actifs
-     */
-    public function getActiveUsers() {
-        try {
-            $sql = "SELECT id, name, email, role, created_at, updated_at 
-                    FROM users WHERE status = 'active' ORDER BY name ASC";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute();
-            
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) {
-            error_log("Erreur récupération utilisateurs actifs: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Changer le statut d'un utilisateur
-     */
-    public function changeUserStatus($id, $status) {
-        try {
-            $sql = "UPDATE users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-            $stmt = $this->db->prepare($sql);
-            
-            return $stmt->execute([$status, $id]);
-        } catch(PDOException $e) {
-            error_log("Erreur changement statut utilisateur: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    // ============================================
-    // FONCTIONS POUR LA RÉINITIALISATION DU MOT DE PASSE
-    // ============================================
-    
+     }
     /**
      * Enregistrer un code de réinitialisation de mot de passe
      */
-    public function savePasswordResetCode($userId, $code, $expiresAt) {
-        try {
-            // D'abord, supprimer les anciens codes pour cet utilisateur
+    public function savePasswordResetCode($userId, $code, $expiresAt) {   
+           try {
             $sqlDelete = "DELETE FROM password_resets WHERE user_id = ?";
             $stmtDelete = $this->db->prepare($sqlDelete);
             $stmtDelete->execute([$userId]);
-            
-            // Ensuite, insérer le nouveau code
+
             $sql = "INSERT INTO password_resets (user_id, code, expires_at, created_at) 
                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
             $stmt = $this->db->prepare($sql);
@@ -265,8 +203,7 @@ class UserModel {
                     'message' => 'Invalid verification code'
                 ];
             }
-            
-            // Vérifier si le code a expiré
+
             $now = new DateTime();
             $expiresAt = new DateTime($result['expires_at']);
             
@@ -293,7 +230,7 @@ class UserModel {
     }
     
     /**
-     * Invalider un code de réinitialisation (marquer comme utilisé)
+     * Invalider un code de réinitialisation
      */
     public function invalidatePasswordResetCode($userId) {
         try {
@@ -306,19 +243,240 @@ class UserModel {
             return false;
         }
     }
+
+    /**
+     * Obtenir les statistiques mensuelles pour l'histogramme
+     * Retourne le nombre d'utilisateurs créés par mois sur les 6 derniers mois
+     */
+    public function getMonthlyUserStats() {
+        try {
+            $sql = "SELECT 
+                        DATE_FORMAT(created_at, '%Y-%m') as month,
+                        DATE_FORMAT(created_at, '%b %Y') as month_label,
+                        COUNT(*) as user_count,
+                        SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END) as students,
+                        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admins
+                    FROM users 
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                    GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b %Y')
+                    ORDER BY month ASC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // S'assurer que nous avons toujours 6 mois de données
+            return $this->fillMissingMonths($results);
+            
+        } catch(PDOException $e) {
+            error_log("Erreur statistiques mensuelles: " . $e->getMessage());
+            return $this->getDefaultMonthlyStats();
+        }
+    }
     
     /**
-     * Nettoyer les codes expirés (à exécuter périodiquement)
+     * Remplir les mois manquants avec des zéros
      */
-    public function cleanExpiredResetCodes() {
+    private function fillMissingMonths($data) {
+        $months = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = date('Y-m', strtotime("-$i months"));
+            $month_label = date('M Y', strtotime("-$i months"));
+            $months[$month] = [
+                'month' => $month,
+                'month_label' => $month_label,
+                'user_count' => 0,
+                'students' => 0,
+                'admins' => 0
+            ];
+        }
+        
+        // Remplir avec les données existantes
+        foreach ($data as $row) {
+            if (isset($months[$row['month']])) {
+                $months[$row['month']] = $row;
+            }
+        }
+        
+        return array_values($months);
+    }
+    
+    /**
+     * Statistiques mensuelles par défaut
+     */
+    private function getDefaultMonthlyStats() {
+        $stats = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = date('Y-m', strtotime("-$i months"));
+            $month_label = date('M Y', strtotime("-$i months"));
+            $stats[] = [
+                'month' => $month,
+                'month_label' => $month_label,
+                'user_count' => 0,
+                'students' => 0,
+                'admins' => 0
+            ];
+        }
+        return $stats;
+    }
+    
+    /**
+     * Obtenir la distribution des rôles pour le diagramme circulaire
+     */
+    public function getRoleDistribution() {
         try {
-            $sql = "DELETE FROM password_resets WHERE expires_at < NOW() OR used = 1";
-            $stmt = $this->db->prepare($sql);
+            $sql = "SELECT 
+                        role,
+                        COUNT(*) as count,
+                        ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM users)), 1) as percentage
+                    FROM users 
+                    GROUP BY role
+                    ORDER BY count DESC";
             
-            return $stmt->execute();
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
-            error_log("Erreur nettoyage codes expirés: " . $e->getMessage());
-            return false;
+            error_log("Erreur distribution des rôles: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Obtenir le taux de croissance et d'engagement
+     */
+    public function getAdvancedStats() {
+        try {
+            $stats = [];
+            
+            // Nouveaux utilisateurs cette semaine vs semaine dernière
+            $sql = "SELECT 
+                        COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as current_week,
+                        COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY) 
+                                  AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as last_week
+                    FROM users";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $growth = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($growth['last_week'] > 0) {
+                $stats['growth_rate'] = round((($growth['current_week'] - $growth['last_week']) / $growth['last_week']) * 100, 1);
+            } else {
+                $stats['growth_rate'] = $growth['current_week'] > 0 ? 100 : 0;
+            }
+            $stats['new_users_this_week'] = $growth['current_week'];
+            
+            // Taux d'engagement (utilisateurs actifs ce mois)
+            $sql = "SELECT 
+                        COUNT(*) as total,
+                        COUNT(CASE WHEN updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as active_month
+                    FROM users WHERE status = 'active'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $engagement = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($engagement['total'] > 0) {
+                $stats['engagement_rate'] = round(($engagement['active_month'] / $engagement['total']) * 100, 1);
+            } else {
+                $stats['engagement_rate'] = 0;
+            }
+            $stats['active_month_count'] = $engagement['active_month'];
+            
+            return $stats;
+            
+        } catch(PDOException $e) {
+            error_log("Erreur récupération statistiques avancées: " . $e->getMessage());
+            return [
+                'growth_rate' => 0,
+                'new_users_this_week' => 0,
+                'engagement_rate' => 0,
+                'active_month_count' => 0
+            ];
+        }
+    }
+    
+    /**
+     * Obtenir les statistiques d'activité des utilisateurs
+     */
+    public function getUserActivityStats() {
+        try {
+            $activityStats = [];
+            
+            // Utilisateurs actifs aujourd'hui
+            $sql = "SELECT COUNT(*) as count FROM users 
+                    WHERE DATE(updated_at) = CURDATE() AND status = 'active'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $activityStats['today_active'] = $stmt->fetchColumn();
+            
+            // Utilisateurs actifs cette semaine
+            $sql = "SELECT COUNT(*) as count FROM users 
+                    WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status = 'active'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $activityStats['week_active'] = $stmt->fetchColumn();
+            
+            // Utilisateurs actifs ce mois
+            $sql = "SELECT COUNT(*) as count FROM users 
+                    WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND status = 'active'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $activityStats['month_active'] = $stmt->fetchColumn();
+            
+            // Top utilisateurs actifs
+            $activityStats['top_users'] = $this->getTopActiveUsers();
+            
+            return $activityStats;
+            
+        } catch(PDOException $e) {
+            error_log("Erreur statistiques activité: " . $e->getMessage());
+            return [
+                'today_active' => 0,
+                'week_active' => 0,
+                'month_active' => 0,
+                'top_users' => []
+            ];
+        }
+    }
+    
+    /**
+     * Obtenir les utilisateurs les plus actifs
+     */
+    private function getTopActiveUsers() {
+        try {
+            $sql = "SELECT id, name, email, role, updated_at,
+                    CASE 
+                        WHEN updated_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) THEN 'Aujourd\\'hui'
+                        WHEN updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 'Cette semaine'
+                        ELSE 'Ce mois'
+                    END as last_seen
+                    FROM users 
+                    WHERE status = 'active'
+                    ORDER BY updated_at DESC 
+                    LIMIT 5";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Ajouter des couleurs et icônes pour l'affichage
+            foreach ($users as &$user) {
+                if ($user['role'] === 'admin') {
+                    $user['color'] = '#fa709a';
+                    $user['icon'] = 'fa-user-shield';
+                } else {
+                    $user['color'] = '#4facfe';
+                    $user['icon'] = 'fa-user-graduate';
+                }
+            }
+            
+            return $users;
+            
+        } catch(PDOException $e) {
+            error_log("Erreur top utilisateurs: " . $e->getMessage());
+            return [];
         }
     }
 }

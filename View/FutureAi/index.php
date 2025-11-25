@@ -698,6 +698,152 @@ try {
         display: none !important;
     }
     
+    /* Styles pour le CAPTCHA */
+    .captcha-container {
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .captcha-label {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--text-dark);
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.3px;
+    }
+    
+    .captcha-wrapper {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    
+    .captcha-image {
+        flex: 1;
+        height: 60px;
+        background: var(--light-gray);
+        border: 2px solid var(--medium-gray);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Courier New', monospace;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        color: var(--primary-violet);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .captcha-image::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 49%, rgba(108, 99, 255, 0.1) 50%, transparent 51%);
+        background-size: 10px 10px;
+    }
+    
+    .captcha-image::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(108, 99, 255, 0.1)"/><circle cx="50" cy="80" r="1.5" fill="rgba(108, 99, 255, 0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(108, 99, 255, 0.1)"/></svg>');
+    }
+    
+    .refresh-captcha {
+        background: var(--primary-violet);
+        color: white;
+        border: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 18px;
+    }
+    
+    .refresh-captcha:hover {
+        background: var(--primary-blue);
+        transform: rotate(90deg) scale(1.1);
+    }
+    
+    .refresh-captcha:active {
+        transform: rotate(90deg) scale(1);
+    }
+    
+    .captcha-input-container {
+        position: relative;
+        flex: 1;
+    }
+    
+    .captcha-input {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid var(--medium-gray);
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--white);
+        color: var(--text-dark);
+        text-transform: uppercase;
+    }
+    
+    .captcha-input:focus {
+        outline: none;
+        border-color: var(--primary-violet);
+        box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .captcha-input::placeholder {
+        color: var(--dark-gray);
+        font-weight: normal;
+        letter-spacing: normal;
+        text-transform: none;
+    }
+    
+    .captcha-error {
+        color: var(--error-red);
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    /* Animation de rafraîchissement du CAPTCHA */
+    @keyframes captchaRefresh {
+        0% { opacity: 0.5; transform: scale(0.95); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    
+    .captcha-refreshing {
+        animation: captchaRefresh 0.5s ease-in-out;
+    }
+    
+    /* Style pour le texte "Je ne suis pas un robot" */
+    .captcha-text {
+        font-size: 14px;
+        color: var(--dark-gray);
+        text-align: center;
+        margin-top: 8px;
+        font-weight: 500;
+    }
+    
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(-5px); }
         to { opacity: 1; transform: translateY(0); }
@@ -945,6 +1091,20 @@ try {
             height: 50px;
             font-size: 22px;
         }
+        
+        .captcha-wrapper {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .captcha-image {
+            width: 100%;
+        }
+        
+        .refresh-captcha {
+            width: 100%;
+            height: 44px;
+        }
     }
 </style>
 </head>
@@ -1008,6 +1168,29 @@ try {
                     <div class="error-message" id="confirmPasswordError"></div>
                 </div>
 
+                <!-- CAPTCHA Section - Remplace les conditions d'utilisation -->
+                <div class="captcha-container">
+                    <label class="captcha-label">Vérification de sécurité</label>
+                    <div class="captcha-wrapper">
+                        <div class="captcha-image" id="captchaImage">
+                            <!-- Le CAPTCHA sera généré ici -->
+                        </div>
+                        <button type="button" class="refresh-captcha" id="refreshCaptcha" title="Rafraîchir le CAPTCHA">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="captcha-input-container">
+                        <input type="text" id="captchaInput" name="captcha_input" class="captcha-input" 
+                               placeholder="Entrez le code ci-dessus" maxlength="6" autocomplete="off">
+                        <input type="hidden" id="captchaCode" name="captcha_code">
+                    </div>
+                    <div class="captcha-error" id="captchaError"></div>
+                    <div class="captcha-text">
+                        <i class="fas fa-robot" style="color: var(--primary-violet);"></i>
+                        Je ne suis pas un robot
+                    </div>
+                </div>
+
                 <!-- Champ rôle caché avec valeur par défaut -->
                 <div class="form-group role-field">
                     <label for="registerRole">Role</label>
@@ -1020,14 +1203,6 @@ try {
                     </div>
                     <div class="error-message" id="roleError"></div>
                 </div>
-                
-                <div class="remember-forgot">
-                    <div class="remember-me">
-                        <input type="checkbox" id="registerTerms" name="terms">
-                        <label for="registerTerms">I accept the terms of use</label>
-                    </div>
-                </div>
-                <div class="error-message" id="termsError"></div>
                 
                 <button type="submit" class="auth-btn">Create Account</button>
             </form>
@@ -1481,7 +1656,87 @@ document.addEventListener('DOMContentLoaded', function() {
     const switchToLoginBtns = document.querySelectorAll('.switch-to-login');
     const switchToRegisterBtns = document.querySelectorAll('.switch-to-register');
     
-    // Fonctions de validation
+    // ============================================
+    // FONCTIONS CAPTCHA
+    // ============================================
+    
+    function generateCaptcha() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let captcha = '';
+        for (let i = 0; i < 6; i++) {
+            captcha += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return captcha;
+    }
+
+    function displayCaptcha(captcha) {
+        const captchaImage = document.getElementById('captchaImage');
+        const captchaCode = document.getElementById('captchaCode');
+        
+        captchaCode.value = captcha;
+        
+        // Créer une représentation visuelle du CAPTCHA
+        let html = '';
+        for (let i = 0; i < captcha.length; i++) {
+            const rotation = (Math.random() * 20 - 10); // Rotation aléatoire entre -10 et 10 degrés
+            const colorVariation = Math.random() * 50 - 25; // Variation de couleur
+            html += `<span style="
+                display: inline-block;
+                transform: rotate(${rotation}deg);
+                color: hsl(${265 + colorVariation}, 100%, 60%);
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+                margin: 0 2px;
+            ">${captcha[i]}</span>`;
+        }
+        
+        captchaImage.innerHTML = html;
+    }
+
+    function refreshCaptcha() {
+        const captchaImage = document.getElementById('captchaImage');
+        captchaImage.classList.add('captcha-refreshing');
+        
+        setTimeout(() => {
+            const newCaptcha = generateCaptcha();
+            displayCaptcha(newCaptcha);
+            
+            setTimeout(() => {
+                captchaImage.classList.remove('captcha-refreshing');
+            }, 500);
+        }, 200);
+    }
+
+    // Validation du CAPTCHA
+    function validateCaptcha(input, code) {
+        return input.toUpperCase() === code.toUpperCase();
+    }
+
+    function showCaptchaError(message) {
+        const errorElement = document.getElementById('captchaError');
+        const inputElement = document.getElementById('captchaInput');
+        
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        inputElement.classList.add('input-error');
+        inputElement.classList.remove('input-success');
+    }
+
+    function hideCaptchaError() {
+        const errorElement = document.getElementById('captchaError');
+        const inputElement = document.getElementById('captchaInput');
+        
+        errorElement.style.display = 'none';
+        inputElement.classList.remove('input-error');
+    }
+
+    // Initialiser le CAPTCHA
+    const initialCaptcha = generateCaptcha();
+    displayCaptcha(initialCaptcha);
+    
+    // ============================================
+    // FONCTIONS DE VALIDATION
+    // ============================================
+    
     function validateName(name) {
         const nameRegex = /^[a-zA-ZÀ-ÿ\s]{2,50}$/;
         return nameRegex.test(name.trim());
@@ -1505,10 +1760,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
-    function validateTerms(termsChecked) {
-        return termsChecked;
-    }
-
     // Fonction pour afficher/masquer les erreurs
     function showError(fieldId, message) {
         const errorElement = document.getElementById(fieldId);
@@ -1529,6 +1780,10 @@ document.addEventListener('DOMContentLoaded', function() {
         inputElement.classList.add('input-success');
     }
 
+    // ============================================
+    // GESTION DE LA MODAL
+    // ============================================
+    
     // Ouvrir la modal avec le formulaire d'inscription par défaut
     openLogin.addEventListener('click', function(e) {
         e.preventDefault();
@@ -1607,7 +1862,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('signinForm').reset();
         resetValidation();
         clearAlerts();
+        refreshCaptcha();
     }
+    
+    // ============================================
+    // GESTION DES MOTS DE PASSE
+    // ============================================
     
     // Toggle pour afficher/masquer les mots de passe
     document.querySelectorAll('.password-toggle').forEach(toggle => {
@@ -1628,7 +1888,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // ============================================
     // VALIDATION EN TEMPS RÉEL POUR L'INSCRIPTION
+    // ============================================
     
     // Validation du nom
     document.getElementById('registerName').addEventListener('blur', function() {
@@ -1675,18 +1937,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Pas de validation en temps réel pour le rôle car il est caché et défini par défaut
-
-    // Validation des conditions d'utilisation
-    document.getElementById('registerTerms').addEventListener('change', function() {
-        if (!validateTerms(this.checked)) {
-            showError('termsError', 'You must accept the terms of use');
+    // Validation du CAPTCHA
+    document.getElementById('captchaInput').addEventListener('input', function() {
+        const captchaCode = document.getElementById('captchaCode').value;
+        const input = this.value.toUpperCase();
+        
+        if (input.length === 6) {
+            if (validateCaptcha(input, captchaCode)) {
+                hideCaptchaError();
+                this.classList.add('input-success');
+            } else {
+                showCaptchaError('Code incorrect. Veuillez réessayer.');
+                this.classList.remove('input-success');
+            }
         } else {
-            hideError('termsError');
+            hideCaptchaError();
+            this.classList.remove('input-success');
         }
     });
 
+    document.getElementById('captchaInput').addEventListener('blur', function() {
+        const captchaCode = document.getElementById('captchaCode').value;
+        const input = this.value.toUpperCase();
+        
+        if (input.length > 0 && input.length < 6) {
+            showCaptchaError('Le code doit contenir 6 caractères');
+        } else if (input.length === 6 && !validateCaptcha(input, captchaCode)) {
+            showCaptchaError('Code incorrect. Veuillez réessayer.');
+        }
+    });
+
+    // Rafraîchir le CAPTCHA
+    document.getElementById('refreshCaptcha').addEventListener('click', function() {
+        refreshCaptcha();
+        document.getElementById('captchaInput').value = '';
+        hideCaptchaError();
+    });
+
+    // ============================================
     // VALIDATION EN TEMPS RÉEL POUR LA CONNEXION
+    // ============================================
     
     // Validation de l'email de connexion
     document.getElementById('loginEmail').addEventListener('blur', function() {
@@ -1708,20 +1998,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Soumission du formulaire d'inscription
-    document.getElementById('registrationForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Forcer la valeur du rôle à "student"
-        document.getElementById('registerRole').value = 'student';
-        
-        // Valider tous les champs
+    // ============================================
+    // SOUMISSION DU FORMULAIRE D'INSCRIPTION
+    // ============================================
+    
+    function validateRegistrationForm() {
         const name = document.getElementById('registerName').value;
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
         const confirmPassword = document.getElementById('registerConfirmPassword').value;
-        const role = document.getElementById('registerRole').value; // Toujours "student"
-        const termsChecked = document.getElementById('registerTerms').checked;
+        const captchaInput = document.getElementById('captchaInput').value;
+        const captchaCode = document.getElementById('captchaCode').value;
         
         let isValid = true;
         
@@ -1745,75 +2032,95 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // Pas de validation du rôle nécessaire car il est toujours "student"
-        
-        if (!validateTerms(termsChecked)) {
-            showError('termsError', 'You must accept the terms of use');
+        // Validation CAPTCHA
+        if (!validateCaptcha(captchaInput, captchaCode)) {
+            showCaptchaError('Please complete the CAPTCHA verification correctly');
             isValid = false;
         }
         
-        if (isValid) {
-            // Soumettre le formulaire si tout est valide
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('.auth-btn');
-            const originalText = submitBtn.textContent;
+        return isValid;
+    }
+
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Forcer la valeur du rôle à "student"
+        document.getElementById('registerRole').value = 'student';
+        
+        if (!validateRegistrationForm()) {
+            return;
+        }
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('.auth-btn');
+        const originalText = submitBtn.textContent;
+        
+        submitBtn.textContent = 'Creating Account...';
+        submitBtn.disabled = true;
+        
+        fetch('../../controller/UserController.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            const alertsContainer = document.getElementById('registerAlerts');
             
-            submitBtn.textContent = 'Creating Account...';
-            submitBtn.disabled = true;
-            
-            fetch('../../controller/UserController.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const alertsContainer = document.getElementById('registerAlerts');
-                
-                if (data.success) {
-                    alertsContainer.innerHTML = `
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i>
-                            <span>${data.message}</span>
-                        </div>
-                    `;
-                    
-                    setTimeout(() => {
-                        resetForms();
-                        showLoginForm();
-                        const loginAlerts = document.getElementById('loginAlerts');
-                        loginAlerts.innerHTML = `
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Account created successfully! Please sign in.</span>
-                            </div>
-                        `;
-                    }, 2000);
-                } else {
-                    alertsContainer.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>${data.message}</span>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('registerAlerts').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>An error occurred during registration</span>
+            if (data.success) {
+                alertsContainer.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>${data.message}</span>
                     </div>
                 `;
-            })
-            .finally(() => {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            });
-        }
+                
+                setTimeout(() => {
+                    resetForms();
+                    showLoginForm();
+                    const loginAlerts = document.getElementById('loginAlerts');
+                    loginAlerts.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Account created successfully! Please sign in.</span>
+                        </div>
+                    `;
+                }, 2000);
+            } else {
+                alertsContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>${data.message}</span>
+                    </div>
+                `;
+                
+                // Rafraîchir le CAPTCHA en cas d'erreur
+                refreshCaptcha();
+                document.getElementById('captchaInput').value = '';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('registerAlerts').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>An error occurred during registration</span>
+                </div>
+            `;
+            
+            // Rafraîchir le CAPTCHA en cas d'erreur
+            refreshCaptcha();
+            document.getElementById('captchaInput').value = '';
+        })
+        .finally(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
     });
     
-    // Soumission du formulaire de connexion
+    // ============================================
+    // SOUMISSION DU FORMULAIRE DE CONNEXION
+    // ============================================
+    
     document.getElementById('signinForm').addEventListener('submit', function(e) {
         e.preventDefault();
         

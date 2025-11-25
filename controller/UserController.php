@@ -1,10 +1,5 @@
 <?php
-/**
- * Contrôleur des utilisateurs
- * Gère l'inscription, la connexion, la réinitialisation de mot de passe
- */
-
-// Activer l'affichage des erreurs pour le débogage
+ // Activer l'affichage des erreurs pour le débogage
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -61,6 +56,16 @@ function validatePassword($password) {
 // Fonction pour générer un code de vérification à 6 chiffres
 function generateVerificationCode() {
     return sprintf("%06d", mt_rand(0, 999999));
+}
+
+// Fonction pour générer un CAPTCHA simple
+function generateCaptcha() {
+    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $captcha = '';
+    for ($i = 0; $i < 6; $i++) {
+        $captcha .= $chars[rand(0, strlen($chars) - 1)];
+    }
+    return $captcha;
 }
 
 // Fonction pour envoyer un email avec PHPMailer
@@ -265,6 +270,9 @@ try {
         case 'reset_password':
             handleResetPassword($userModel);
             break;
+        case 'generate_captcha':
+            handleGenerateCaptcha();
+            break;
         case 'list':
             handleList($userModel);
             break;
@@ -279,6 +287,9 @@ try {
             break;
         case 'logout':
             handleLogout();
+            break;
+        case 'get_stats':
+            handleGetStats($userModel);
             break;
         default:
             sendJsonResponse(false, 'Invalid action: ' . $action);
@@ -297,6 +308,8 @@ function handleRegister($userModel) {
     $password = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirmPassword'] ?? '';
     $role = $_POST['role'] ?? 'student';
+    $captcha_input = trim($_POST['captcha_input'] ?? '');
+    $captcha_code = $_POST['captcha_code'] ?? '';
     
     if (empty($name)) {
         sendJsonResponse(false, 'Name is required');
@@ -312,6 +325,15 @@ function handleRegister($userModel) {
     
     if ($password !== $confirmPassword) {
         sendJsonResponse(false, 'Passwords do not match');
+    }
+    
+    // Vérification CAPTCHA
+    if (empty($captcha_input)) {
+        sendJsonResponse(false, 'Please complete the CAPTCHA verification');
+    }
+    
+    if ($captcha_input !== $captcha_code) {
+        sendJsonResponse(false, 'CAPTCHA verification failed. Please try again.');
     }
     
     if ($userModel->emailExists($email)) {
@@ -461,6 +483,62 @@ function handleResetPassword($userModel) {
     }
 }
 
+function handleGenerateCaptcha() {
+    $captcha = generateCaptcha();
+    $_SESSION['captcha_code'] = $captcha;
+    
+    // Créer une image CAPTCHA simple
+    $width = 200;
+    $height = 60;
+    $image = imagecreate($width, $height);
+    
+    // Couleurs
+    $bg_color = imagecolorallocate($image, 245, 247, 250); // Fond clair
+    $text_color = imagecolorallocate($image, 108, 99, 255); // Texte violet
+    $noise_color = imagecolorallocate($image, 200, 200, 200); // Bruit
+    
+    // Remplir le fond
+    imagefill($image, 0, 0, $bg_color);
+    
+    // Ajouter du bruit
+    for ($i = 0; $i < 100; $i++) {
+        imagesetpixel($image, rand(0, $width), rand(0, $height), $noise_color);
+    }
+    
+    // Ajouter des lignes de bruit
+    for ($i = 0; $i < 5; $i++) {
+        imageline($image, rand(0, $width), rand(0, $height), rand(0, $width), rand(0, $height), $noise_color);
+    }
+    
+    // Position du texte
+    $font_size = 20;
+    $text_bbox = imagettfbbox($font_size, 0, __DIR__ . '/../assets/fonts/arial.ttf', $captcha);
+    $text_width = $text_bbox[2] - $text_bbox[0];
+    $text_height = $text_bbox[1] - $text_bbox[7];
+    $x = ($width - $text_width) / 2;
+    $y = ($height - $text_height) / 2 + $text_height;
+    
+    // Essayer différentes polices
+    $fonts = [
+        __DIR__ . '/../assets/fonts/arial.ttf',
+        __DIR__ . '/../assets/fonts/verdana.ttf'
+    ];
+    
+    $selected_font = $fonts[0];
+    if (file_exists($fonts[1])) {
+        $selected_font = $fonts[array_rand($fonts)];
+    }
+    
+    // Dessiner le texte
+    imagettftext($image, $font_size, 0, $x, $y, $text_color, $selected_font, $captcha);
+    
+    // Envoyer l'image
+    header('Content-Type: image/png');
+    imagepng($image);
+    imagedestroy($image);
+    exit;
+}
+
 function handleList($userModel) {
     $users = $userModel->getAllUsers();
     if ($users !== false) {
@@ -557,5 +635,27 @@ function handleLogout() {
     }
     
     sendJsonResponse(true, 'Logged out successfully', null, '../../view/front/future-ai/index.php');
+}
+
+function handleGetStats($userModel) {
+    try {
+        // Statistiques avancées
+        $advancedStats = $userModel->getAdvancedStats();
+        
+        // Statistiques mensuelles pour l'histogramme
+        $monthlyStats = $userModel->getMonthlyUserStats();
+        
+        // Statistiques d'activité des utilisateurs
+        $activityStats = $userModel->getUserActivityStats();
+        
+        sendJsonResponse(true, 'Statistics retrieved successfully', [
+            'advanced_stats' => $advancedStats,
+            'monthly_stats' => $monthlyStats,
+            'activity_stats' => $activityStats
+        ]);
+    } catch (Exception $e) {
+        error_log("Erreur récupération stats: " . $e->getMessage());
+        sendJsonResponse(false, 'Failed to retrieve statistics');
+    }
 }
 ?>

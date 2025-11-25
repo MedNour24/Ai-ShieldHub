@@ -114,6 +114,102 @@ require_once '../../../config.php';
         background-color: #fff3cd;
         font-weight: 500;
       }
+      
+      /* Styles pour les nouvelles statistiques */
+      .histogram-bar {
+        transition: height 0.8s ease;
+      }
+      
+      /* Styles pour l'activité des utilisateurs */
+      .activity-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+      .activity-stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+      .activity-stat-number {
+        font-size: 2.2em;
+        font-weight: 800;
+        margin-bottom: 5px;
+      }
+      .activity-stat-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+      }
+      .top-users-list {
+        max-height: 280px;
+        overflow-y: auto;
+      }
+      .user-activity-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+      }
+      .user-activity-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+      }
+      .user-activity-item.admin {
+        border-left-color: #fa709a;
+      }
+      .user-activity-item.student {
+        border-left-color: #4facfe;
+      }
+      .user-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2em;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      }
+      .user-info {
+        flex: 1;
+      }
+      .user-name {
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 3px;
+      }
+      .user-email {
+        font-size: 0.85em;
+        color: #718096;
+      }
+      .user-activity {
+        text-align: right;
+      }
+      .last-seen {
+        font-size: 0.8em;
+        color: #6c757d;
+        font-weight: 600;
+      }
+      .user-role {
+        font-size: 0.75em;
+        padding: 3px 8px;
+        border-radius: 12px;
+        background: white;
+        color: #667eea;
+        font-weight: 600;
+        margin-top: 5px;
+        display: inline-block;
+      }
     </style>
   </head>
   <body>
@@ -212,7 +308,8 @@ require_once '../../../config.php';
                     </li>
                   </ul>
                 </div>
-              </li><li class="nav-item">
+              </li>
+              <li class="nav-item">
                 <a data-bs-toggle="collapse" href="#maps">
                   <i class="fas fa-map-marker-alt"></i>
                   <p>Maps</p>
@@ -308,7 +405,7 @@ require_once '../../../config.php';
                         <a class="dropdown-item" href="#">My Profile</a>
                         <a class="dropdown-item" href="#">Account Setting</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">Logout</a>
+                        <a class="dropdown-item" href="../../../controller/UserController.php?action=logout">Logout</a>
                       </li>
                     </div>
                   </ul>
@@ -408,6 +505,71 @@ require_once '../../../config.php';
                           <p class="card-category">Active</p>
                           <h4 class="card-title" id="active-count">0</h4>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nouvelles statistiques innovantes -->
+            <div class="row mt-4">
+              <!-- HISTOGRAMME - Croissance Mensuelle -->
+              <div class="col-md-7">
+                <div class="card card-round">
+                  <div class="card-header">
+                    <div class="card-head-row">
+                      <div class="card-title">
+                        <i class="fas fa-chart-bar me-2"></i>Croissance Mensuelle
+                      </div>
+                      <div class="card-tools">
+                        <div class="d-flex align-items-center">
+                          <span class="badge badge-info me-2">
+                            <i class="fas fa-user-graduate"></i> Étudiants
+                          </span>
+                          <span class="badge badge-warning">
+                            <i class="fas fa-user-shield"></i> Admins
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div id="monthly-histogram" style="height: 350px;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ACTIVITÉ DES UTILISATEURS - Connexions Récentes -->
+              <div class="col-md-5">
+                <div class="card card-round">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fas fa-user-clock me-2"></i>Activité des Utilisateurs
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="activity-stats">
+                      <div class="activity-stat-card">
+                        <div class="activity-stat-number" id="today-active">0</div>
+                        <div class="activity-stat-label">Aujourd'hui</div>
+                      </div>
+                      <div class="activity-stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <div class="activity-stat-number" id="week-active">0</div>
+                        <div class="activity-stat-label">Cette Semaine</div>
+                      </div>
+                      <div class="activity-stat-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                        <div class="activity-stat-number" id="month-active">0</div>
+                        <div class="activity-stat-label">Ce Mois</div>
+                      </div>
+                    </div>
+                    
+                    <h6 class="fw-bold mb-3">
+                      <i class="fas fa-fire me-2"></i>Top Utilisateurs Actifs
+                    </h6>
+                    <div class="top-users-list" id="top-users-list">
+                      <div class="text-center text-muted p-4">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Chargement...
                       </div>
                     </div>
                   </div>
@@ -631,10 +793,12 @@ require_once '../../../config.php';
 
         // Load users on page load
         loadUsers();
+        loadAdvancedStats();
 
         // Refresh users button
         $('#refresh-users').on('click', function() {
           loadUsers();
+          loadAdvancedStats();
         });
 
         // Add user functionality
@@ -722,6 +886,151 @@ require_once '../../../config.php';
           });
         }
 
+        // Fonction pour charger et afficher les statistiques avancées
+        function loadAdvancedStats() {
+          $.ajax({
+            url: controllerUrl,
+            type: 'GET',
+            data: { action: 'get_stats' },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success && response.data) {
+                createHistogram(response.data.monthly_stats);
+                createActivityStats(response.data.activity_stats);
+              } else {
+                console.error('Erreur dans la réponse des stats:', response);
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Erreur chargement stats:', error);
+              // Afficher des données par défaut en cas d'erreur
+              createHistogram([]);
+              createActivityStats({
+                today_active: 0,
+                week_active: 0,
+                month_active: 0,
+                top_users: []
+              });
+            }
+          });
+        }
+
+        // Créer l'histogramme
+        function createHistogram(data) {
+          const container = $('#monthly-histogram');
+          container.empty();
+          
+          if (!data || data.length === 0) {
+            container.html('<div class="text-center text-muted p-5">Aucune donnée disponible</div>');
+            return;
+          }
+
+          const maxValue = Math.max(...data.map(d => Math.max(parseInt(d.students || 0), parseInt(d.admins || 0))));
+          const maxHeight = maxValue > 0 ? maxValue : 1; // Éviter la division par zéro
+          
+          let html = '<div style="display: flex; align-items: flex-end; justify-content: space-around; height: 300px; gap: 10px;">';
+          
+          data.forEach((item, index) => {
+            const studentCount = parseInt(item.students || 0);
+            const adminCount = parseInt(item.admins || 0);
+            const studentHeight = (studentCount / maxHeight) * 100;
+            const adminHeight = (adminCount / maxHeight) * 100;
+            
+            html += `
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 100%; height: 280px; display: flex; gap: 5px; align-items: flex-end; justify-content: center;">
+                  <div class="histogram-bar" style="flex: 1; max-width: 40px; height: 0%; 
+                       background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+                       border-radius: 8px 8px 0 0; position: relative; transition: height 0.8s ease;"
+                       data-height="${studentHeight}">
+                    <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); 
+                                font-weight: 700; font-size: 0.75em; color: #4facfe; white-space: nowrap;">
+                      ${studentCount}
+                    </div>
+                  </div>
+                  <div class="histogram-bar" style="flex: 1; max-width: 40px; height: 0%; 
+                       background: linear-gradient(180deg, #fa709a 0%, #fee140 100%);
+                       border-radius: 8px 8px 0 0; position: relative; transition: height 0.8s ease;"
+                       data-height="${adminHeight}">
+                    <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); 
+                                font-weight: 700; font-size: 0.75em; color: #fa709a; white-space: nowrap;">
+                      ${adminCount}
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.8em; color: #718096; font-weight: 600; text-align: center;">
+                  ${item.month_label || item.month}
+                </div>
+              </div>
+            `;
+          });
+          
+          html += '</div>';
+          container.html(html);
+          
+          // Animer les barres
+          setTimeout(() => {
+            $('.histogram-bar').each(function() {
+              const targetHeight = $(this).data('height');
+              $(this).css('height', targetHeight + '%');
+            });
+          }, 300);
+        }
+
+        // Créer les statistiques d'activité
+        function createActivityStats(activityData) {
+          if (!activityData) {
+            activityData = {
+              today_active: 0,
+              week_active: 0,
+              month_active: 0,
+              top_users: []
+            };
+          }
+          
+          // Mettre à jour les compteurs
+          $('#today-active').text(activityData.today_active || 0);
+          $('#week-active').text(activityData.week_active || 0);
+          $('#month-active').text(activityData.month_active || 0);
+          
+          // Afficher la liste des top utilisateurs
+          const topUsersList = $('#top-users-list');
+          topUsersList.empty();
+          
+          if (!activityData.top_users || activityData.top_users.length === 0) {
+            topUsersList.html(`
+              <div class="text-center text-muted p-4">
+                <i class="fas fa-users fa-2x mb-3"></i>
+                <p>Aucune activité récente</p>
+              </div>
+            `);
+            return;
+          }
+          
+          activityData.top_users.forEach(user => {
+            const userClass = user.role === 'admin' ? 'admin' : 'student';
+            const roleLabel = user.role === 'admin' ? 'Administrateur' : 'Étudiant';
+            const userInitial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+            
+            const userItem = `
+              <div class="user-activity-item ${userClass}">
+                <div class="user-avatar" style="background: ${user.color || '#667eea'};">
+                  ${userInitial}
+                </div>
+                <div class="user-info">
+                  <div class="user-name">${escapeHtml(user.name || 'Unknown')}</div>
+                  <div class="user-email">${escapeHtml(user.email || 'No email')}</div>
+                  <span class="user-role">${roleLabel}</span>
+                </div>
+                <div class="user-activity">
+                  <div class="last-seen">${user.last_seen || 'Unknown'}</div>
+                </div>
+              </div>
+            `;
+            topUsersList.append(userItem);
+          });
+        }
+
         function applyFilters() {
           const searchTerm = $('#search-input').val().toLowerCase().trim();
           const roleFilter = $('#filter-role').val();
@@ -741,8 +1050,8 @@ require_once '../../../config.php';
           filteredUsers = allUsers.filter(user => {
             // Search filter (name or email)
             const matchesSearch = searchTerm === '' || 
-              user.name.toLowerCase().includes(searchTerm) || 
-              user.email.toLowerCase().includes(searchTerm);
+              (user.name && user.name.toLowerCase().includes(searchTerm)) || 
+              (user.email && user.email.toLowerCase().includes(searchTerm));
 
             // Role filter
             const matchesRole = roleFilter === '' || user.role === roleFilter;
@@ -838,11 +1147,11 @@ require_once '../../../config.php';
               ? '<span class="badge badge-primary">Admin</span>'
               : '<span class="badge badge-info">Student</span>';
 
-            const createdDate = new Date(user.created_at).toLocaleDateString();
+            const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown';
 
             // Highlight search terms
-            let displayName = escapeHtml(user.name);
-            let displayEmail = escapeHtml(user.email);
+            let displayName = escapeHtml(user.name || 'Unknown');
+            let displayEmail = escapeHtml(user.email || 'No email');
             
             if (highlightTerm) {
               const regex = new RegExp(`(${escapeRegex(highlightTerm)})`, 'gi');
@@ -862,8 +1171,8 @@ require_once '../../../config.php';
                   <div class="action-buttons">
                     <button class="btn btn-sm btn-warning btn-action btn-edit" 
                             data-id="${user.id}"
-                            data-name="${escapeHtml(user.name)}"
-                            data-email="${escapeHtml(user.email)}"
+                            data-name="${escapeHtml(user.name || '')}"
+                            data-email="${escapeHtml(user.email || '')}"
                             data-role="${user.role}"
                             data-status="${user.status}"
                             title="Edit">
@@ -871,7 +1180,7 @@ require_once '../../../config.php';
                     </button>
                     <button class="btn btn-sm btn-danger btn-action btn-delete" 
                             data-id="${user.id}"
-                            data-name="${escapeHtml(user.name)}"
+                            data-name="${escapeHtml(user.name || '')}"
                             title="Delete">
                       <i class="fas fa-trash"></i>
                     </button>
@@ -940,6 +1249,7 @@ require_once '../../../config.php';
                 $('#add-user-form')[0].reset();
                 showSuccess('User added successfully!');
                 loadUsers();
+                loadAdvancedStats();
               } else {
                 showError(response.message || 'Failed to add user');
               }
@@ -991,6 +1301,7 @@ require_once '../../../config.php';
                 $('#editUserModal').modal('hide');
                 showSuccess('User updated successfully!');
                 loadUsers();
+                loadAdvancedStats();
               } else {
                 showError(response.message || 'Failed to update user');
               }
@@ -1019,6 +1330,7 @@ require_once '../../../config.php';
               if (response.success) {
                 showSuccess('User deleted successfully!');
                 loadUsers();
+                loadAdvancedStats();
               } else {
                 showError(response.message || 'Failed to delete user');
               }
