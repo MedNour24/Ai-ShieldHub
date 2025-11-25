@@ -22,7 +22,6 @@ class config
                     ]
                 );
             } catch (Exception $e) {
-                // DO NOT use die(). Throw the error so the API can handle it.
                 throw new Exception("Database Error: " . $e->getMessage());
             }
         }

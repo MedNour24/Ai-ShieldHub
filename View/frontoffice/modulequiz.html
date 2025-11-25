@@ -1,0 +1,719 @@
+modulequiz.html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - AI ShieldHub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            background: var(--darker);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 50%, #1e1b4b 100%);
+        }
+
+        .animated-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(-50px, -50px);
+            }
+        }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.3;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) translateX(0);
+            }
+
+            25% {
+                transform: translateY(-100px) translateX(50px);
+            }
+
+            50% {
+                transform: translateY(-200px) translateX(-50px);
+            }
+
+            75% {
+                transform: translateY(-100px) translateX(100px);
+            }
+        }
+
+        /* Header */
+        .navbar {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 20px 0;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-link {
+            color: var(--light) !important;
+            font-weight: 500;
+            padding: 10px 20px !important;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after {
+            width: 60%;
+        }
+
+        /* Quiz Section */
+        .quiz-section {
+            padding: 120px 0 80px;
+            position: relative;
+        }
+
+        .quiz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .quiz-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .quiz-card:hover {
+            transform: translateY(-15px);
+            border-color: var(--primary);
+            box-shadow: 0 25px 50px rgba(99, 102, 241, 0.3);
+        }
+
+        .quiz-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .quiz-icon i {
+            font-size: 28px;
+            color: white;
+        }
+
+        .quiz-card h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .quiz-card p {
+            color: #94a3b8;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .quiz-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .quiz-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-inactive {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .difficulty {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .difficulty-beginner {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .difficulty-intermediate {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .difficulty-advanced {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        /* Quiz Detail View */
+        .quiz-detail {
+            display: none;
+            padding: 120px 0 80px;
+            position: relative;
+        }
+
+        .quiz-header {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--light);
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .back-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            transform: translateX(-5px);
+        }
+
+        .questions-container {
+            margin-top: 30px;
+        }
+
+        .question-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .question-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+
+        .question-text {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: white;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-item {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .option-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .option-item.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+        }
+
+        .option-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--primary);
+        }
+
+        .option-item.selected .option-number {
+            background: var(--primary);
+            color: white;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 40px;
+            transition: all 0.3s ease;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 80px;
+            margin-bottom: 30px;
+            opacity: 0.5;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title h6 {
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+        }
+
+        .section-title h2 {
+            font-size: 48px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .section-title p {
+            color: var(--light);
+            font-size: 18px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .section-title h2 {
+                font-size: 32px;
+            }
+
+            .quiz-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="animated-bg">
+        <div class="particle"
+            style="width: 100px; height: 100px; background: rgba(99, 102, 241, 0.3); top: 20%; left: 10%; animation-delay: 0s;">
+        </div>
+        <div class="particle"
+            style="width: 60px; height: 60px; background: rgba(139, 92, 246, 0.3); top: 60%; left: 80%; animation-delay: 3s;">
+        </div>
+        <div class="particle"
+            style="width: 80px; height: 80px; background: rgba(236, 72, 153, 0.3); top: 80%; left: 20%; animation-delay: 6s;">
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../../index1.html">
+                <i class="fas fa-shield-halved me-2"></i>AI ShieldHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="../../index1.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../courses.html">Courses</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="modulequiz.html">Quiz</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../tournament.html">Tournoi</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown"
+                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div
+                                style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; margin-right: 8px;">
+                                <i class="fas fa-user" style="font-size: 16px;"></i>
+                            </div>
+                            <span>John Doe</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown"
+                            style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(99, 102, 241, 0.3);">
+                            <li><a class="dropdown-item" href="#" style="color: var(--light);"><i
+                                        class="fas fa-user me-2"></i>My Profile</a></li>
+                            <li>
+                                <hr class="dropdown-divider" style="border-color: rgba(99, 102, 241, 0.3);">
+                            </li>
+                            <li><a class="dropdown-item" href="../logout.html" style="color: var(--accent);"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Quiz List View -->
+    <div id="quiz-list-view">
+        <section class="quiz-section">
+            <div class="container">
+                <div class="section-title">
+                    <h6><i class="fas fa-fire me-2"></i>AVAILABLE QUIZZES</h6>
+                    <h2>Choose Your Challenge</h2>
+                    <p>Select from our curated collection of cybersecurity quizzes designed for all skill levels</p>
+                </div>
+
+                <div class="quiz-grid" id="quiz-grid">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Loading quizzes...
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Quiz Detail View -->
+    <div id="quiz-detail-view" class="quiz-detail">
+        <div class="container">
+            <button class="back-btn" onclick="showQuizList()">
+                <i class="fas fa-arrow-left"></i> Back to Quizzes
+            </button>
+
+            <div class="quiz-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h6><i class="fas fa-shield-alt me-2"></i>QUIZ IN PROGRESS</h6>
+                        <h1 id="detail-title" class="gradient-text">Cybersecurity Basics</h1>
+                        <p id="detail-description" class="lead">Test your fundamental knowledge of cybersecurity
+                            principles and best practices.</p>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <div class="quiz-meta">
+                            <span class="quiz-status status-active">Active</span>
+                            <span class="difficulty difficulty-beginner">Beginner</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="questions-container" id="questions-container">
+                <!-- Questions will be loaded here -->
+            </div>
+
+            <button class="submit-btn" id="submit-quiz" onclick="submitQuiz()">
+                <i class="fas fa-paper-plane me-2"></i>Submit Quiz Answers
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ⚠️ UPDATE THIS PATH if your controller is elsewhere
+        // ".." goes up from 'frontoffice', ".." goes up from 'view' -> into 'controller'
+        const API_BASE = "../../controller/api_quiz.php";
+
+        let loadedQuizzes = [];
+        let currentQuizQuestions = [];
+        let userAnswers = {};
+
+        document.addEventListener('DOMContentLoaded', loadQuizzes);
+
+        // 1. FETCH QUIZ LIST
+        async function loadQuizzes() {
+            try {
+                const response = await fetch(`${API_BASE}?action=getActiveQuizzes`);
+                const quizzes = await response.json();
+                loadedQuizzes = quizzes;
+
+                const grid = document.getElementById('quiz-grid');
+
+                if (quizzes.length === 0) {
+                    grid.innerHTML = `<div style="text-align:center; grid-column:1/-1;">No active quizzes found.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = quizzes.map(quiz => `
+                    <div class="quiz-card" onclick="loadQuizDetail(${quiz.id_quiz})">
+                        <div class="quiz-icon"><i class="fas fa-shield-alt"></i></div>
+                        <h3>${escapeHtml(quiz.titre)}</h3>
+                        <p>${escapeHtml(quiz.description)}</p>
+                        <div class="quiz-meta">
+                            <span class="difficulty difficulty-beginner">Level: ${escapeHtml(quiz.description).split(' ')[0] || 'General'}</span>
+                            <span class="quiz-status status-active">Active</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+                document.getElementById('quiz-grid').innerHTML = `<div style="color:red; text-align:center; grid-column:1/-1;">Error loading quizzes.</div>`;
+            }
+        }
+
+        // 2. FETCH QUESTIONS FOR A QUIZ
+        async function loadQuizDetail(quizId) {
+            // Get quiz info from memory
+            const quiz = loadedQuizzes.find(q => q.id_quiz == quizId);
+            if (!quiz) return;
+
+            // Update header
+            document.getElementById('detail-title').textContent = quiz.titre;
+            document.getElementById('detail-description').textContent = quiz.description;
+
+            // Show loading
+            document.getElementById('questions-container').innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-white"></i></div>';
+
+            // Switch view
+            document.getElementById('quiz-list-view').style.display = 'none';
+            document.getElementById('quiz-detail-view').style.display = 'block';
+            window.scrollTo(0, 0);
+
+            // Reset answers
+            userAnswers = {};
+
+            try {
+                const response = await fetch(`${API_BASE}?action=getQuestions&id=${quizId}`);
+                const questions = await response.json();
+                currentQuizQuestions = questions;
+                displayQuestions(questions);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('questions-container').innerHTML = '<p class="text-danger text-center">Error loading questions.</p>';
+            }
+        }
+
+        function displayQuestions(questions) {
+            const container = document.getElementById('questions-container');
+
+            if (questions.length === 0) {
+                container.innerHTML = '<div class="text-center p-5 text-muted">No questions in this quiz yet.</div>';
+                return;
+            }
+
+            container.innerHTML = questions.map((q, index) => `
+                <div class="question-card" id="q-card-${q.id_reponse}">
+                    <div class="question-text">${index + 1}. ${escapeHtml(q.question)}</div>
+                    <div class="options-list">
+                        <div class="option-item" onclick="selectOption(${q.id_reponse}, 1)">
+                            <div class="option-number">A</div>
+                            <div>${escapeHtml(q.option1)}</div>
+                        </div>
+                        <div class="option-item" onclick="selectOption(${q.id_reponse}, 2)">
+                            <div class="option-number">B</div>
+                            <div>${escapeHtml(q.option2)}</div>
+                        </div>
+                        <div class="option-item" onclick="selectOption(${q.id_reponse}, 3)">
+                            <div class="option-number">C</div>
+                            <div>${escapeHtml(q.option3)}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectOption(qId, optionNum) {
+            const card = document.getElementById(`q-card-${qId}`);
+            const options = card.querySelectorAll('.option-item');
+
+            // Reset style
+            options.forEach(opt => opt.classList.remove('selected'));
+
+            // Set active style
+            options[optionNum - 1].classList.add('selected');
+
+            // Save answer
+            userAnswers[qId] = optionNum;
+        }
+
+        function submitQuiz() {
+            let score = 0;
+            let total = currentQuizQuestions.length;
+
+            if (total === 0) return alert("No questions to submit.");
+
+            // Check if all answered
+            if (Object.keys(userAnswers).length < total) {
+                if (!confirm("You skipped some questions. Submit anyway?")) return;
+            }
+
+            // Grading
+            currentQuizQuestions.forEach(q => {
+                if (userAnswers[q.id_reponse] == q.reponse_correcte) {
+                    score++;
+                }
+            });
+
+            const percent = Math.round((score / total) * 100);
+            let msg = `You scored ${score} out of ${total} (${percent}%)`;
+
+            if (percent >= 70) msg += "\n\n🎉 Great Job!";
+            else msg += "\n\nKeep practicing!";
+
+            alert(msg);
+            showQuizList();
+        }
+
+        function showQuizList() {
+            document.getElementById('quiz-detail-view').style.display = 'none';
+            document.getElementById('quiz-list-view').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+
+</html>
