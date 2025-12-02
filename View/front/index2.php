@@ -727,7 +727,7 @@
                     <li class="nav-item"><a class="nav-link" href="./courses.html">Courses</a></li>
                     <li class="nav-item"><a class="nav-link" href="./community.html">Community</a></li>
                     <li class="nav-item"><a class="nav-link" href="./quiz.html">Quiz</a></li>
-                    <li class="nav-item"><a class="nav-link" href="./tournoi.html">Tournoi</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./tour.html">Tournoi</a></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; margin-right: 8px;">
