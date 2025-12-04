@@ -44,6 +44,7 @@ $userId = $_SESSION['user_id'] ?? 0;
             --dark: #0f172a;
             --darker: #020617;
             --light: #e2e8f0;
+            --error: #ef4444;
         }
         
         * {
@@ -652,6 +653,7 @@ $userId = $_SESSION['user_id'] ?? 0;
         
         .form-group {
             margin-bottom: 25px;
+            position: relative;
         }
         
         .form-group label {
@@ -684,6 +686,24 @@ $userId = $_SESSION['user_id'] ?? 0;
         
         .form-group input::placeholder {
             color: rgba(226, 232, 240, 0.5);
+        }
+        
+        .error-message {
+            color: var(--error);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .form-group.error input {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        
+        .form-group.success input {
+            border-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
         
         .modal-footer {
@@ -730,6 +750,25 @@ $userId = $_SESSION['user_id'] ?? 0;
         
         #photoInput {
             display: none;
+        }
+        
+        .validation-summary {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .validation-summary ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--error);
+        }
+        
+        .validation-summary li {
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -980,6 +1019,10 @@ $userId = $_SESSION['user_id'] ?? 0;
                 <button class="close" onclick="closeProfileModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="validation-summary" id="validationSummary">
+                    <ul id="validationList"></ul>
+                </div>
+                
                 <div class="profile-photo-section">
                     <div class="profile-photo-wrapper">
                         <div class="profile-photo" id="modalProfilePhoto">
@@ -993,31 +1036,35 @@ $userId = $_SESSION['user_id'] ?? 0;
                     <p style="color: var(--light); font-size: 14px;">Click the camera icon to change your profile photo</p>
                 </div>
                 
-                <form id="profileForm" onsubmit="saveProfile(event)">
-                    <div class="form-group">
+                <form id="profileForm" onsubmit="return saveProfile(event)">
+                    <div class="form-group" id="fullNameGroup">
                         <label for="fullName"><i class="fas fa-user me-2"></i>Full Name</label>
-                        <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" value="<?php echo htmlspecialchars($userName); ?>" required>
+                        <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" value="<?php echo htmlspecialchars($userName); ?>">
+                        <div class="error-message" id="fullNameError"></div>
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="emailGroup">
                         <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="Enter your email" value="<?php echo htmlspecialchars($userEmail); ?>" required>
+                        <input type="text" id="email" name="email" placeholder="Enter your email" value="<?php echo htmlspecialchars($userEmail); ?>">
+                        <div class="error-message" id="emailError"></div>
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="passwordGroup">
                         <label for="password"><i class="fas fa-lock me-2"></i>New Password</label>
                         <input type="password" id="password" name="password" placeholder="Leave blank to keep current password">
+                        <div class="error-message" id="passwordError"></div>
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="confirmPasswordGroup">
                         <label for="confirmPassword"><i class="fas fa-lock me-2"></i>Confirm Password</label>
                         <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your new password">
+                        <div class="error-message" id="confirmPasswordError"></div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
-                <button class="btn-save" onclick="document.getElementById('profileForm').requestSubmit()">
+                <button class="btn-save" onclick="validateAndSaveProfile()">
                     <i class="fas fa-save me-2"></i>Save Changes
                 </button>
             </div>
@@ -1030,11 +1077,13 @@ $userId = $_SESSION['user_id'] ?? 0;
         function openProfileModal() {
             document.getElementById('profileModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
+            resetValidation();
         }
         
         function closeProfileModal() {
             document.getElementById('profileModal').style.display = 'none';
             document.body.style.overflow = 'auto';
+            resetForm();
         }
         
         // Close modal when clicking outside
@@ -1049,6 +1098,20 @@ $userId = $_SESSION['user_id'] ?? 0;
         function handlePhotoUpload(event) {
             const file = event.target.files[0];
             if (file) {
+                // Validation de l'image
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if (!validTypes.includes(file.type)) {
+                    showFieldError('photoInput', 'Please select a valid image file (JPEG, PNG, GIF)');
+                    return;
+                }
+                
+                if (file.size > maxSize) {
+                    showFieldError('photoInput', 'Image size must be less than 5MB');
+                    return;
+                }
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const photoDiv = document.getElementById('modalProfilePhoto');
@@ -1065,30 +1128,274 @@ $userId = $_SESSION['user_id'] ?? 0;
                         navProfileDiv.style.backgroundPosition = 'center';
                         navProfileDiv.innerHTML = '';
                     }
+                    
+                    clearFieldError('photoInput');
                 }
                 reader.readAsDataURL(file);
             }
         }
         
-        // Save profile
+        // Validation functions
+        function validateFullName(fullName) {
+            if (!fullName || fullName.trim() === '') {
+                return 'Full name is required';
+            }
+            
+            if (fullName.length < 2) {
+                return 'Full name must be at least 2 characters long';
+            }
+            
+            if (fullName.length > 50) {
+                return 'Full name must be less than 50 characters';
+            }
+            
+            const nameRegex = /^[a-zA-Z\s\-']+$/;
+            if (!nameRegex.test(fullName)) {
+                return 'Full name can only contain letters, spaces, hyphens, and apostrophes';
+            }
+            
+            return '';
+        }
+        
+        function validateEmail(email) {
+            if (!email || email.trim() === '') {
+                return 'Email address is required';
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return 'Please enter a valid email address';
+            }
+            
+            if (email.length > 100) {
+                return 'Email address must be less than 100 characters';
+            }
+            
+            return '';
+        }
+        
+        function validatePassword(password) {
+            // Si le mot de passe est vide, c'est OK (l'utilisateur ne veut pas le changer)
+            if (!password || password === '') {
+                return '';
+            }
+            
+            if (password.length < 8) {
+                return 'Password must be at least 8 characters long';
+            }
+            
+            if (password.length > 50) {
+                return 'Password must be less than 50 characters';
+            }
+            
+            if (!/(?=.*[a-z])/.test(password)) {
+                return 'Password must contain at least one lowercase letter';
+            }
+            
+            if (!/(?=.*[A-Z])/.test(password)) {
+                return 'Password must contain at least one uppercase letter';
+            }
+            
+            if (!/(?=.*\d)/.test(password)) {
+                return 'Password must contain at least one number';
+            }
+            
+            if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(password)) {
+                return 'Password must contain at least one special character';
+            }
+            
+            return '';
+        }
+        
+        function validateConfirmPassword(password, confirmPassword) {
+            // Si les deux sont vides, c'est OK
+            if ((!password || password === '') && (!confirmPassword || confirmPassword === '')) {
+                return '';
+            }
+            
+            if (password !== confirmPassword) {
+                return 'Passwords do not match';
+            }
+            
+            return '';
+        }
+        
+        // Field validation functions
+        function validateField(fieldId, validationFunction) {
+            const field = document.getElementById(fieldId);
+            const value = field.value.trim();
+            const error = validationFunction(value);
+            
+            if (error) {
+                showFieldError(fieldId, error);
+                return false;
+            } else {
+                clearFieldError(fieldId);
+                return true;
+            }
+        }
+        
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.closest('.form-group');
+            const errorElement = document.getElementById(fieldId + 'Error');
+            
+            formGroup.classList.remove('success');
+            formGroup.classList.add('error');
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+        
+        function clearFieldError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.closest('.form-group');
+            const errorElement = document.getElementById(fieldId + 'Error');
+            
+            formGroup.classList.remove('error');
+            formGroup.classList.add('success');
+            
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+            }
+        }
+        
+        function resetValidation() {
+            const errorMessages = document.querySelectorAll('.error-message');
+            errorMessages.forEach(error => {
+                error.textContent = '';
+                error.style.display = 'none';
+            });
+            
+            const formGroups = document.querySelectorAll('.form-group');
+            formGroups.forEach(group => {
+                group.classList.remove('error', 'success');
+            });
+            
+            document.getElementById('validationSummary').style.display = 'none';
+            document.getElementById('validationList').innerHTML = '';
+        }
+        
+        function resetForm() {
+            document.getElementById('fullName').value = '<?php echo htmlspecialchars($userName); ?>';
+            document.getElementById('email').value = '<?php echo htmlspecialchars($userEmail); ?>';
+            document.getElementById('password').value = '';
+            document.getElementById('confirmPassword').value = '';
+            resetValidation();
+        }
+        
+        // Real-time validation
+        document.getElementById('fullName').addEventListener('blur', function() {
+            validateField('fullName', validateFullName);
+        });
+        
+        document.getElementById('email').addEventListener('blur', function() {
+            validateField('email', validateEmail);
+        });
+        
+        document.getElementById('password').addEventListener('blur', function() {
+            validateField('password', validatePassword);
+            // Valider aussi la confirmation si elle a une valeur
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (confirmPassword) {
+                validateField('confirmPassword', (value) => validateConfirmPassword(this.value, value));
+            }
+        });
+        
+        document.getElementById('confirmPassword').addEventListener('blur', function() {
+            const password = document.getElementById('password').value;
+            validateField('confirmPassword', (value) => validateConfirmPassword(password, value));
+        });
+        
+        // Main validation function
+        function validateForm() {
+            let isValid = true;
+            const errors = [];
+            
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate full name
+            const fullNameError = validateFullName(fullName);
+            if (fullNameError) {
+                showFieldError('fullName', fullNameError);
+                errors.push(fullNameError);
+                isValid = false;
+            } else {
+                clearFieldError('fullName');
+            }
+            
+            // Validate email
+            const emailError = validateEmail(email);
+            if (emailError) {
+                showFieldError('email', emailError);
+                errors.push(emailError);
+                isValid = false;
+            } else {
+                clearFieldError('email');
+            }
+            
+            // Validate password
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                showFieldError('password', passwordError);
+                errors.push(passwordError);
+                isValid = false;
+            } else {
+                clearFieldError('password');
+            }
+            
+            // Validate confirm password
+            const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
+            if (confirmPasswordError) {
+                showFieldError('confirmPassword', confirmPasswordError);
+                errors.push(confirmPasswordError);
+                isValid = false;
+            } else {
+                clearFieldError('confirmPassword');
+            }
+            
+            // Show validation summary if there are errors
+            if (errors.length > 0) {
+                const validationList = document.getElementById('validationList');
+                validationList.innerHTML = '';
+                errors.forEach(error => {
+                    const li = document.createElement('li');
+                    li.textContent = error;
+                    validationList.appendChild(li);
+                });
+                document.getElementById('validationSummary').style.display = 'block';
+            } else {
+                document.getElementById('validationSummary').style.display = 'none';
+            }
+            
+            return isValid;
+        }
+        
+        // Save profile with validation
+        function validateAndSaveProfile() {
+            if (validateForm()) {
+                saveProfile();
+            }
+        }
+        
         function saveProfile(event) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+            }
+            
+            if (!validateForm()) {
+                return false;
+            }
             
             const fullName = document.getElementById('fullName').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            // Validation
-            if (password && password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-            
-            if (password && password.length < 8) {
-                alert('Password must be at least 8 characters long!');
-                return;
-            }
             
             // Update navbar name
             const navName = document.querySelector('.nav-link.dropdown-toggle span');
@@ -1102,6 +1409,8 @@ $userId = $_SESSION['user_id'] ?? 0;
             
             // Here you would normally send the data to your server
             console.log('Profile data:', { fullName, email, password: password ? '***' : 'unchanged' });
+            
+            return false;
         }
         
         // Logout function
