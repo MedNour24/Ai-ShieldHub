@@ -325,13 +325,15 @@ try {
         case 'get_dashboard_stats':
             handleGetDashboardStats($userModel);
             break;
+        case 'check_avatar_path':
+            handleCheckAvatarPath();
+            break;
+        case 'load_avatars':
+            handleLoadAvatars();
+            break;
         default:
             sendJsonResponse(false, 'Invalid action: ' . $action);
-            case 'check_avatar_path':
-        handleCheckAvatarPath();
-    break;
     }
-
     
 } catch (Exception $e) {
     error_log("Exception in UserController: " . $e->getMessage());
@@ -909,28 +911,40 @@ function handleUpdateProfile($userModel) {
         
         // Priorité 1: Avatar sélectionné
         if (!empty($selectedAvatar)) {
-            // CORRECTION: Vérifier dans le bon répertoire
-            $avatarPath = __DIR__ . '/../../../assets/img/avatars/' . $selectedAvatar;
-            
-            // DEBUG: Vérifier si le fichier existe
-            error_log("Chemin avatar vérifié: " . $avatarPath);
-            error_log("Fichier existe: " . (file_exists($avatarPath) ? 'OUI' : 'NON'));
-            
-            if (file_exists($avatarPath)) {
-                // Supprimer l'ancienne image uploadée (pas les avatars)
-                deleteOldUploadedImage($userId);
-                $uploadedFileName = 'avatars/' . $selectedAvatar;
-                error_log("Avatar sélectionné: " . $uploadedFileName);
-            } else {
-                // Essayer avec un chemin différent
-                $alternativePath = __DIR__ . '/../../assets/img/avatars/' . $selectedAvatar;
-                if (file_exists($alternativePath)) {
+            // Vérifier que l'avatar est bien dans un sous-dossier
+            if (strpos($selectedAvatar, '/') !== false) {
+                list($style, $avatarFile) = explode('/', $selectedAvatar);
+                
+                // CORRECTION : Chemins multiples possibles
+                $avatarPaths = [
+                    // Chemin depuis le dashboard
+                    __DIR__ . '/../../../back/kaiadmin-lite-1.2.0/assets/img/avatars/' . $selectedAvatar,
+                    // Chemin depuis le controller
+                    __DIR__ . '/../../assets/img/avatars/' . $selectedAvatar,
+                    // Chemin absolu
+                    $_SERVER['DOCUMENT_ROOT'] . '/user1/view/back/kaiadmin-lite-1.2.0/assets/img/avatars/' . $selectedAvatar
+                ];
+                
+                $foundPath = null;
+                foreach ($avatarPaths as $avatarPath) {
+                    error_log("Vérification du chemin: " . $avatarPath);
+                    if (file_exists($avatarPath)) {
+                        $foundPath = $avatarPath;
+                        break;
+                    }
+                }
+                
+                if ($foundPath) {
+                    // Supprimer l'ancienne image uploadée (pas les avatars)
+                    deleteOldUploadedImage($userId);
                     $uploadedFileName = 'avatars/' . $selectedAvatar;
-                    error_log("Avatar trouvé via chemin alternatif");
+                    error_log("Avatar sélectionné et valide: " . $uploadedFileName);
                 } else {
                     error_log("Avatar non trouvé: " . $selectedAvatar);
-                    sendJsonResponse(false, 'Selected avatar does not exist: ' . $selectedAvatar);
+                    sendJsonResponse(false, 'Selected avatar does not exist');
                 }
+            } else {
+                sendJsonResponse(false, 'Invalid avatar format');
             }
         }
         // Priorité 2: Image uploadée
@@ -950,7 +964,7 @@ function handleUpdateProfile($userModel) {
             $updatedUser = $userModel->getUserById($userId);
             
             // Construire l'URL de l'image
-            $profileImageUrl = 'assets/img/profile.jpg';
+            $profileImageUrl = 'assets/img/profile.jpg'; // Image par défaut
             if (!empty($updatedUser['profile_image'])) {
                 // Vérifier si c'est un avatar ou une image uploadée
                 if (strpos($updatedUser['profile_image'], 'avatars/') === 0) {
@@ -963,11 +977,6 @@ function handleUpdateProfile($userModel) {
             // Mettre à jour les données de session
             $_SESSION['user_name'] = $updatedUser['name'];
             $_SESSION['user_email'] = $updatedUser['email'];
-            
-            // Mettre à jour également l'image dans la session si nécessaire
-            if (!empty($updatedUser['profile_image'])) {
-                $_SESSION['profile_image'] = $profileImageUrl;
-            }
             
             sendJsonResponse(true, 'Profile updated successfully', [
                 'name' => $updatedUser['name'],
@@ -985,7 +994,7 @@ function handleUpdateProfile($userModel) {
 }
 
 function handleProfileImageUpload($userId) {
-    $uploadDir = __DIR__ . '/../../../assets/uploads/';
+    $uploadDir = __DIR__ . '/../../../back/kaiadmin-lite-1.2.0/assets/uploads/';
     
     // Créer le dossier s'il n'existe pas
     if (!is_dir($uploadDir)) {
@@ -1058,7 +1067,7 @@ function deleteOldUploadedImage($userId) {
         if ($user && !empty($user['profile_image'])) {
             // Ne supprimer que si ce n'est pas un avatar
             if (strpos($user['profile_image'], 'avatars/') !== 0) {
-                $oldImagePath = __DIR__ . '/../../../assets/uploads/' . $user['profile_image'];
+                $oldImagePath = __DIR__ . '/../../../back/kaiadmin-lite-1.2.0/assets/uploads/' . $user['profile_image'];
                 if (file_exists($oldImagePath)) {
                     unlink($oldImagePath);
                 }
@@ -1353,5 +1362,85 @@ function handleGetUserDetails($userModel) {
         error_log("Database error in getUserDetails: " . $e->getMessage());
         sendJsonResponse(false, 'Database error: ' . $e->getMessage());
     }
+}
+
+function handleCheckAvatarPath() {
+    // Cette fonction permet de vérifier si les chemins d'avatars sont corrects
+    $avatarStyles = ['robot', 'humain', 'geometrique', 'illustration'];
+    $results = [];
+    
+    foreach ($avatarStyles as $style) {
+        // CORRECTION : Chemins multiples
+        $pathsToCheck = [
+            // Chemin principal
+            __DIR__ . '/../../../back/kaiadmin-lite-1.2.0/assets/img/avatars/' . $style,
+            // Chemin alternatif
+            __DIR__ . '/../../assets/img/avatars/' . $style,
+            // Chemin absolu
+            $_SERVER['DOCUMENT_ROOT'] . '/user1/view/back/kaiadmin-lite-1.2.0/assets/img/avatars/' . $style
+        ];
+        
+        $foundPath = null;
+        $files = [];
+        
+        foreach ($pathsToCheck as $path) {
+            error_log("Vérification: " . $path);
+            if (is_dir($path)) {
+                $foundPath = $path;
+                $files = scandir($path);
+                $imageFiles = array_filter($files, function($file) {
+                    return preg_match('/\.(png|jpg|jpeg|gif)$/i', $file);
+                });
+                $files = array_values($imageFiles);
+                break;
+            }
+        }
+        
+        if ($foundPath) {
+            $results[$style] = [
+                'exists' => true,
+                'path' => $foundPath,
+                'files' => $files,
+                'count' => count($files)
+            ];
+        } else {
+            $results[$style] = [
+                'exists' => false,
+                'path' => $pathsToCheck[0],
+                'error' => 'Directory not found in any of the checked paths'
+            ];
+        }
+    }
+    
+    sendJsonResponse(true, 'Avatar paths checked', $results);
+}
+
+function handleLoadAvatars() {
+    $style = $_GET['style'] ?? 'robot';
+    
+    // Listes prédéfinies des avatars par style
+    $avatarsByStyle = [
+        'robot' => ['robot1.png', 'robot2.png', 'robot3.png', 'robot4.png', 'robot5.png', 'robot6.png', 'robot7.png', 'robot8.png'],
+        'humain' => ['humain1.png', 'humain2.png', 'humain3.png', 'humain4.png', 'humain5.png', 'humain6.png', 'humain7.png', 'humain8.png'],
+        'geometrique' => ['geometrique1.png', 'geometrique2.png', 'geometrique3.png', 'geometrique4.png', 'geometrique5.png', 'geometrique6.png', 'geometrique7.png', 'geometrique8.png'],
+        'illustration' => ['illustration1.png', 'illustration2.png', 'illustration3.png', 'illustration4.png', 'illustration5.png', 'illustration6.png', 'illustration7.png', 'illustration8.png']
+    ];
+    
+    $avatars = $avatarsByStyle[$style] ?? [];
+    
+    // Construire les URLs complètes
+    $avatarData = [];
+    foreach ($avatars as $avatar) {
+        $avatarData[] = [
+            'filename' => $avatar,
+            'url' => 'assets/img/avatars/' . $style . '/' . $avatar,
+            'full_path' => '/user1/view/back/kaiadmin-lite-1.2.0/assets/img/avatars/' . $style . '/' . $avatar
+        ];
+    }
+    
+    sendJsonResponse(true, 'Avatars loaded', [
+        'style' => $style,
+        'avatars' => $avatarData
+    ]);
 }
 ?>
