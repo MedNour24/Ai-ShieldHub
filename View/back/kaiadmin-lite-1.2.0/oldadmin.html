@@ -300,9 +300,178 @@
       white-space: nowrap;
     }
 
+    /* Pagination Styles */
+    .pagination-row {
+      background: #f8f9fa !important;
+    }
+
+    .pagination-row:hover {
+      background: #f8f9fa !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .pagination-number {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      height: 40px;
+      margin: 0 4px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      background: white;
+      color: #495057;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .pagination-number:hover:not(.active) {
+      transform: scale(1.1);
+      border-color: #0d6efd;
+      color: #0d6efd;
+    }
+
+    .pagination-number.active {
+      cursor: default;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    .pagination-prev,
+    .pagination-next {
+      padding: 10px 20px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      background: white;
+      color: #495057;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pagination-prev:hover,
+    .pagination-next:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: #0d6efd;
+      color: #0d6efd;
+    }
+
+    .pagination-prev.disabled,
+    .pagination-next.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .pagination-next {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: #667eea;
+    }
+
+    .pagination-next:hover {
+      color: white;
+    }
+
+    .pagination-prev:active,
+    .pagination-next:active,
+    .pagination-number:active {
+      transform: scale(0.95);
+    }
+
+    .pagination-info {
+      color: #6c757d;
+      font-size: 0.875rem;
+      margin: 0 15px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .items-per-page {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-right: 20px;
+    }
+
+    .items-per-page select {
+      padding: 6px 12px;
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+      color: #495057;
+      transition: all 0.3s ease;
+    }
+
+    .items-per-page select:hover {
+      border-color: #0d6efd;
+    }
+
+    .items-per-page select:focus {
+      outline: none;
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* Animation de transition */
+    #tournoiTableBody tr:not(.pagination-row) {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 768px) {
       .filter-section .row > div {
         margin-bottom: 1rem;
+      }
+
+      .pagination-row > td > div {
+        flex-wrap: wrap;
+        gap: 8px !important;
+      }
+      
+      .pagination-number {
+        min-width: 35px !important;
+        height: 35px !important;
+        font-size: 12px !important;
+      }
+      
+      .pagination-prev,
+      .pagination-next {
+        min-width: 70px !important;
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+      }
+
+      .pagination-info {
+        margin: 8px 0;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .items-per-page {
+        margin: 8px 0;
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>

@@ -9,6 +9,10 @@ let imageRemovalState = {
   originalImagePath: null
 };
 
+// Pagination state
+let currentPage = 1;
+let itemsPerPage = 4;
+
 document.addEventListener('DOMContentLoaded', function() {
   loadTournois();
   
@@ -16,9 +20,18 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btnSaveModifier').addEventListener('click', handleModifierTournoi);
   
   // Search and filter event listeners
-  document.getElementById('searchInput').addEventListener('input', applyFiltersAndSort);
-  document.getElementById('filterNiveau').addEventListener('change', applyFiltersAndSort);
-  document.getElementById('filterDateRange').addEventListener('change', applyFiltersAndSort);
+  document.getElementById('searchInput').addEventListener('input', () => {
+    currentPage = 1;
+    applyFiltersAndSort();
+  });
+  document.getElementById('filterNiveau').addEventListener('change', () => {
+    currentPage = 1;
+    applyFiltersAndSort();
+  });
+  document.getElementById('filterDateRange').addEventListener('change', () => {
+    currentPage = 1;
+    applyFiltersAndSort();
+  });
   document.getElementById('btnClearFilters').addEventListener('click', clearFilters);
   
   // Sorting event listeners
@@ -236,6 +249,7 @@ function clearFilters() {
   document.getElementById('searchInput').value = '';
   document.getElementById('filterNiveau').value = '';
   document.getElementById('filterDateRange').value = '';
+  currentPage = 1;
   applyFiltersAndSort();
 }
 
@@ -339,37 +353,137 @@ function displayTournaments(tournaments) {
   const tbody = document.getElementById('tournoiTableBody');
   document.getElementById('tournamentCount').textContent = tournaments.length;
   
-  if (tournaments.length > 0) {
-    tbody.innerHTML = tournaments.map(t => `
-      <tr>
-        <td><strong>${t.id}</strong></td>
-        <td>
-          ${t.image ? `<img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.nom)}" class="tournament-image">` : '<i class="fas fa-image text-muted"></i>'}
-        </td>
-        <td><strong>${escapeHtml(t.nom)}</strong></td>
-        <td>${escapeHtml(t.theme)}</td>
-        <td><div class="description-preview" title="${escapeHtml(t.description || 'No description')}">${escapeHtml(t.description || 'No description')}</div></td>
-        <td><span class="badge-niveau badge-${getNiveauClass(t.niveau)}">${escapeHtml(t.niveau)}</span></td>
-        <td>${formatDate(t.date_debut)}</td>
-        <td>${formatDate(t.date_fin)}</td>
-        <td class="text-center">
-          <div class="dropdown">
-            <button class="action-dots" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); viewTournoi(${t.id})"><i class="far fa-eye"></i> View</a></li>
-              <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); editTournoi(${t.id})"><i class="far fa-edit"></i> Edit</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); deleteTournoi(${t.id})"><i class="far fa-trash-alt"></i> Delete</a></li>
-            </ul>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  } else {
+  if (tournaments.length === 0) {
     tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="empty-state"><i class="fas fa-trophy fa-3x mb-3 text-muted"></i><p>No tournaments found</p></div></td></tr>';
+    return;
   }
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(tournaments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, tournaments.length);
+  const currentPageTournaments = tournaments.slice(startIndex, endIndex);
+  
+  // Build tournament rows
+  const rows = currentPageTournaments.map(t => `
+    <tr>
+      <td><strong>${t.id}</strong></td>
+      <td>
+        ${t.image ? `<img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.nom)}" class="tournament-image">` : '<i class="fas fa-image text-muted"></i>'}
+      </td>
+      <td><strong>${escapeHtml(t.nom)}</strong></td>
+      <td>${escapeHtml(t.theme)}</td>
+      <td><div class="description-preview" title="${escapeHtml(t.description || 'No description')}">${escapeHtml(t.description || 'No description')}</div></td>
+      <td><span class="badge-niveau badge-${getNiveauClass(t.niveau)}">${escapeHtml(t.niveau)}</span></td>
+      <td>${formatDate(t.date_debut)}</td>
+      <td>${formatDate(t.date_fin)}</td>
+      <td class="text-center">
+        <div class="dropdown">
+          <button class="action-dots" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); viewTournoi(${t.id})"><i class="far fa-eye"></i> View</a></li>
+            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); editTournoi(${t.id})"><i class="far fa-edit"></i> Edit</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); deleteTournoi(${t.id})"><i class="far fa-trash-alt"></i> Delete</a></li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  
+  // Build pagination row
+  const paginationRow = buildPaginationRow(currentPage, totalPages, startIndex + 1, endIndex, tournaments.length);
+  
+  tbody.innerHTML = rows + paginationRow;
+}
+
+function buildPaginationRow(currentPage, totalPages, startItem, endItem, totalItems) {
+  if (totalPages <= 1) return '';
+  
+  let pageNumbers = '';
+  const maxVisiblePages = 5;
+  
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  
+  if (endPage - startPage < maxVisiblePages - 1) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+  
+  // First page
+  if (startPage > 1) {
+    pageNumbers += `<span class="pagination-number" onclick="goToPage(1)">1</span>`;
+    if (startPage > 2) {
+      pageNumbers += `<span class="pagination-number" style="cursor: default; border: none;">...</span>`;
+    }
+  }
+  
+  // Page numbers
+  for (let i = startPage; i <= endPage; i++) {
+    const activeClass = i === currentPage ? 'active' : '';
+    pageNumbers += `<span class="pagination-number ${activeClass}" onclick="goToPage(${i})">${i}</span>`;
+  }
+  
+  // Last page
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      pageNumbers += `<span class="pagination-number" style="cursor: default; border: none;">...</span>`;
+    }
+    pageNumbers += `<span class="pagination-number" onclick="goToPage(${totalPages})">${totalPages}</span>`;
+  }
+  
+  const prevDisabled = currentPage === 1 ? 'disabled' : '';
+  const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+  
+  return `
+    <tr class="pagination-row">
+      <td colspan="9" style="border: none; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+          <div class="items-per-page">
+            <span style="color: #6c757d; font-size: 0.875rem; font-weight: 600;">Show:</span>
+            <select onchange="changeItemsPerPage(this.value)" style="padding: 6px 12px; border: 2px solid #dee2e6; border-radius: 6px; background: white; cursor: pointer; font-weight: 600; color: #495057;">
+              <option value="5" ${itemsPerPage === 5 ? 'selected' : ''}>5</option>
+              <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+              <option value="25" ${itemsPerPage === 25 ? 'selected' : ''}>25</option>
+              <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+              <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
+            </select>
+          </div>
+          
+          <div class="pagination-info">
+            Showing <strong>${startItem}</strong> to <strong>${endItem}</strong> of <strong>${totalItems}</strong> tournaments
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="pagination-prev ${prevDisabled}" onclick="goToPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''}>
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            ${pageNumbers}
+            
+            <button class="pagination-next ${nextDisabled}" onclick="goToPage(${currentPage + 1})" ${nextDisabled ? 'disabled' : ''}>
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function goToPage(page) {
+  currentPage = page;
+  applyFiltersAndSort();
+  // Smooth scroll to top of table
+  document.querySelector('.card-round').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changeItemsPerPage(value) {
+  itemsPerPage = parseInt(value);
+  currentPage = 1;
+  applyFiltersAndSort();
 }
 
 async function loadTournois() {

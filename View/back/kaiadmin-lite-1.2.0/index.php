@@ -373,6 +373,48 @@
                 </div>
               </div>
 
+              <!-- Event Statistics Cards -->
+              <div class="row">
+                <div class="col-sm-6 col-md-6">
+                  <div class="card card-stats card-round">
+                    <div class="card-body">
+                      <div class="row align-items-center">
+                        <div class="col-icon">
+                          <div class="icon-big text-center icon-warning bubble-shadow-small">
+                            <i class="fas fa-calendar-check"></i>
+                          </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                          <div class="numbers">
+                            <p class="card-category">Event Registrations</p>
+                            <h4 class="card-title" id="total-event-participants">0</h4>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-md-6">
+                  <div class="card card-stats card-round">
+                    <div class="card-body">
+                      <div class="row align-items-center">
+                        <div class="col-icon">
+                          <div class="icon-big text-center icon-danger bubble-shadow-small">
+                            <i class="fas fa-trophy"></i>
+                          </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                          <div class="numbers">
+                            <p class="card-category">Most Popular Event</p>
+                            <h4 class="card-title" id="most-popular-event">-</h4>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- User Management Section -->
               <div class="row">
                 <div class="col-md-12">
@@ -423,7 +465,7 @@
 
             <!-- Team Page Content -->
             <div id="team-page" class="page-content">
-              <iframe src="../adteam.html" style="width: 100%; height: calc(100vh - 150px); border: none;"></iframe>
+              <iframe src="../team.html" style="width: 100%; height: calc(100vh - 150px); border: none;"></iframe>
             </div>
           </div>
         </div>
@@ -537,6 +579,7 @@
     <script>
       $(document).ready(function() {
         const controllerUrl = '../../../controller/UserController.php';
+        const teamControllerUrl = '../../../Controller/teamC.php';
 
         // Page Navigation
         $('.nav-link[data-page]').on('click', function(e) {
@@ -554,11 +597,13 @@
           // Load users if switching to dashboard
           if (page === 'dashboard') {
             loadUsers();
+            loadEventStatistics();
           }
         });
 
-        // Load users on page load
+        // Load users and stats on page load
         loadUsers();
+        loadEventStatistics();
 
         // Refresh users button
         $('#refresh-users').on('click', function() {
@@ -922,6 +967,27 @@
         $('#editUserModal').on('show.bs.modal', function() {
           $('.invalid-feedback').text('').hide();
         });
+        function loadEventStatistics() {
+          $.ajax({
+            url: teamControllerUrl,
+            type: 'GET',
+            data: { action: 'getStatistics' },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success) {
+                $('#total-event-participants').text(response.data.total_members);
+                const mostPopular = response.data.most_popular_event;
+                const popularText = mostPopular.count > 0 
+                  ? `${escapeHtml(mostPopular.name)} (${mostPopular.count})` 
+                  : '-';
+                $('#most-popular-event').text(popularText);
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Error loading event stats:', error);
+            }
+          });
+        }
       });
     </script>
   </body>
