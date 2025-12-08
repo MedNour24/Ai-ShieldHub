@@ -1,0 +1,193 @@
+/**
+ * ============================================
+ * GAMIFICATION REWARDS PREVIEW STYLES
+ * ============================================
+ * Styles for the rewards preview section on tournament cards
+ */
+
+/* ============================================
+   REWARDS PREVIEW CONTAINER
+   ============================================ */
+
+.rewards-preview {
+    margin-top: 15px;
+    padding: 12px 12px 12px 35px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+    border-radius: 10px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+/* Gift icon with pulse animation */
+.rewards-preview::before {
+    content: '🎁';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   REWARD ITEMS
+   ============================================ */
+
+.reward-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 8px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.reward-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px) scale(1.05);
+}
+
+/* ============================================
+   REWARD ICONS
+   ============================================ */
+
+.reward-icon {
+    font-size: 28px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Staggered animation delays for each icon */
+.reward-item:nth-child(1) .reward-icon {
+    animation-delay: 0s;
+}
+
+.reward-item:nth-child(2) .reward-icon {
+    animation-delay: 0.5s;
+}
+
+.reward-item:nth-child(3) .reward-icon {
+    animation-delay: 1s;
+}
+
+/* ============================================
+   REWARD LABELS
+   ============================================ */
+
+.reward-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   CUSTOM TOOLTIP STYLING
+   ============================================ */
+
+.tooltip {
+    font-family: inherit;
+}
+
+.tooltip-inner {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid rgba(0, 188, 212, 0.5);
+    border-radius: 8px;
+    padding: 10px 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    font-size: 13px;
+    max-width: 250px;
+}
+
+.tooltip-arrow::before {
+    border-top-color: rgba(0, 188, 212, 0.5) !important;
+}
+
+.reward-value {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.reward-description {
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* Floating animation for reward icons */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Pulse animation for gift icon */
+@keyframes pulse {
+    0%, 100% {
+        transform: translateY(-50%) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-50%) scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .rewards-preview {
+        padding: 10px 10px 10px 30px;
+        gap: 5px;
+    }
+
+    .reward-icon {
+        font-size: 24px;
+    }
+
+    .reward-label {
+        font-size: 10px;
+    }
+
+    .rewards-preview::before {
+        font-size: 18px;
+        left: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .rewards-preview {
+        padding: 8px 8px 8px 28px;
+        gap: 3px;
+    }
+
+    .reward-icon {
+        font-size: 22px;
+    }
+
+    .reward-label {
+        font-size: 9px;
+    }
+
+    .reward-item {
+        padding: 6px;
+    }
+}
