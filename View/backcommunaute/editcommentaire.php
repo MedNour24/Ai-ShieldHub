@@ -34,16 +34,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen(trim($texte)) > 500) {
         $error = "Le commentaire ne peut pas dépasser 500 caractères !";
     } else {
-        // Créer l'objet Commentaire et mettre à jour
+        // CORRECTION : Ordre correct des paramètres du constructeur Commentaire
         $commentaireObj = new Commentaire(
             $idCommentaire,
-            $commentaire['id_utilisateur'],
-            $commentaire['id_publication'],
+            $idPublication,  // CORRECTION : id_publication en 2ème paramètre
+            $idUser,         // CORRECTION : id_utilisateur en 3ème paramètre  
             trim($texte),
             new DateTime($commentaire['date_commentaire'])
         );
         
-        $commentaireController->updateCommentaire($commentaireObj, $idCommentaire);
+        // MODIFIÉ : Utiliser updateCommentaire sans le 2ème paramètre (l'ID est déjà dans l'objet)
+        $commentaireController->updateCommentaire($commentaireObj);
         
         // Rediriger vers la page des commentaires
         header("Location: addcommentaire.php?id_utilisateur=" . $idUser . "&id_publication=" . $idPublication);
@@ -51,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -91,9 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .char-counter.warning {
             color: #ffc107;
+            font-weight: bold;
         }
         .char-counter.danger {
             color: #dc3545;
+            font-weight: bold;
         }
         .btn-submit {
             background: linear-gradient(135deg, #1572e8, #0a58ca);
@@ -147,6 +149,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #6c757d;
             font-size: 14px;
         }
+        .is-invalid {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        .validation-alert {
+            display: none;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -166,12 +176,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <!-- Messages d'erreur -->
+                <!-- Messages d'erreur PHP -->
                 <?php if (isset($error)): ?>
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle me-2"></i><?= $error ?>
                     </div>
                 <?php endif; ?>
+
+                <!-- Alerte de validation JavaScript -->
+                <div id="jsValidationAlert" class="alert alert-danger validation-alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i><span id="jsValidationMessage"></span>
+                </div>
 
                 <!-- Formulaire de modification -->
                 <form id="editCommentForm" action="" method="POST">
@@ -183,11 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             class="form-control" 
                             rows="6" 
                             placeholder="Modifiez votre commentaire ici..."
-                            maxlength="500"
-                        ><?= htmlspecialchars($commentaire['texte']) ?></textarea>
+                        ><?= htmlspecialchars($commentaire['contenu'] ?? $commentaire['texte']) ?></textarea>
                         <div class="char-counter" id="charCounter">
                             <span id="charCount">0</span>/500 caractères
                         </div>
+                        <small class="form-text text-muted">Maximum 500 caractères autorisés</small>
                     </div>
                     
                     <div class="d-flex justify-content-between align-items-center">
@@ -207,87 +222,186 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- JavaScript pour le contrôle de saisie -->
+    <!-- JavaScript pour le contrôle de saisie STRICT -->
     <script src="assets/js/core/jquery-3.7.1.min.js"></script>
     <script>
-        $(document).ready(function() {
-            const textarea = document.getElementById('commentText');
-            const charCounter = document.getElementById('charCounter');
-            const charCount = document.getElementById('charCount');
-            const maxChars = 500;
+        class CommentValidator {
+            constructor() {
+                this.maxChars = 500;
+                this.init();
+            }
 
-            // Fonction pour mettre à jour le compteur
-            function updateCharCounter() {
-                const currentLength = textarea.value.length;
-                charCount.textContent = currentLength;
+            init() {
+                this.attachFormValidation();
+                this.attachRealTimeValidation();
+                this.updateCharCounter(this.getTextarea().value.length);
+            }
 
+            getTextarea() {
+                return document.getElementById('commentText');
+            }
+
+            getCharCounter() {
+                return document.getElementById('charCounter');
+            }
+
+            getCharCount() {
+                return document.getElementById('charCount');
+            }
+
+            getValidationAlert() {
+                return document.getElementById('jsValidationAlert');
+            }
+
+            getValidationMessage() {
+                return document.getElementById('jsValidationMessage');
+            }
+
+            attachFormValidation() {
+                const form = document.getElementById('editCommentForm');
+                
+                form.addEventListener('submit', (e) => {
+                    console.log('Form submission intercepted by JavaScript validation');
+                    
+                    // EMPÊCHER TOUJOURS la soumission par défaut
+                    e.preventDefault();
+                    
+                    // Valider le formulaire
+                    if (this.validateForm()) {
+                        console.log('Form validation successful, submitting...');
+                        // Si validation OK, soumettre le formulaire
+                        form.submit();
+                    } else {
+                        console.log('Form validation failed');
+                    }
+                });
+            }
+
+            validateForm() {
+                const textarea = this.getTextarea();
+                const texte = textarea.value.trim();
+                
+                // Réinitialiser les états de validation
+                this.resetValidationStates();
+                
+                let isValid = true;
+                
+                // Validation du texte (obligatoire)
+                if (texte === '') {
+                    this.showError('Le commentaire ne peut pas être vide !', textarea);
+                    isValid = false;
+                } else if (texte.length > this.maxChars) {
+                    this.showError(`Le commentaire ne peut pas dépasser ${this.maxChars} caractères ! Actuellement: ${texte.length} caractères`, textarea);
+                    isValid = false;
+                }
+                
+                return isValid;
+            }
+
+            attachRealTimeValidation() {
+                const textarea = this.getTextarea();
+                
+                textarea.addEventListener('input', () => {
+                    const charCount = textarea.value.length;
+                    this.updateCharCounter(charCount);
+                    
+                    // Validation visuelle en temps réel
+                    if (charCount > this.maxChars) {
+                        textarea.classList.add('is-invalid');
+                    } else {
+                        textarea.classList.remove('is-invalid');
+                    }
+                    
+                    // Limiter automatiquement à 500 caractères
+                    if (charCount > this.maxChars) {
+                        textarea.value = textarea.value.substring(0, this.maxChars);
+                        this.updateCharCounter(this.maxChars);
+                    }
+                });
+            }
+
+            updateCharCounter(charCount) {
+                const counter = this.getCharCounter();
+                const countSpan = this.getCharCount();
+                
+                countSpan.textContent = charCount;
+                
                 // Changer la couleur selon le nombre de caractères
-                if (currentLength > 450) {
-                    charCounter.className = 'char-counter danger';
-                } else if (currentLength > 400) {
-                    charCounter.className = 'char-counter warning';
+                if (charCount > 450) {
+                    counter.className = 'char-counter danger';
+                } else if (charCount > 400) {
+                    counter.className = 'char-counter warning';
                 } else {
-                    charCounter.className = 'char-counter';
+                    counter.className = 'char-counter';
                 }
             }
 
-            // Initialiser le compteur
-            updateCharCounter();
-
-            // Événement sur la saisie
-            textarea.addEventListener('input', function() {
-                updateCharCounter();
+            resetValidationStates() {
+                // Cacher l'alerte de validation
+                this.getValidationAlert().style.display = 'none';
                 
-                // Limiter automatiquement à 500 caractères
-                if (this.value.length > maxChars) {
-                    this.value = this.value.substring(0, maxChars);
-                    updateCharCounter();
-                }
-            });
+                // Réinitialiser les styles des champs
+                this.getTextarea().classList.remove('is-invalid');
+            }
 
-            // Validation du formulaire
-            $('#editCommentForm').on('submit', function(e) {
-                const texte = textarea.value.trim();
+            showError(message, element = null) {
+                const alert = this.getValidationAlert();
+                const messageSpan = this.getValidationMessage();
                 
-                // Validation côté client
-                if (texte === '') {
-                    e.preventDefault();
-                    alert('Le commentaire ne peut pas être vide !');
-                    textarea.focus();
-                    return false;
-                }
-
-                if (texte.length > maxChars) {
-                    e.preventDefault();
-                    alert('Le commentaire ne peut pas dépasser 500 caractères !');
-                    textarea.focus();
-                    return false;
-                }
-
-                // Empêcher la double soumission
-                const submitBtn = $(this).find('button[type="submit"]');
-                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...');
-
-                return true;
-            });
-
-            // Empêcher la saisie de retours à la ligne multiples
-            textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const currentValue = this.value;
-                    const lines = currentValue.split('\n').length;
+                messageSpan.textContent = message;
+                alert.style.display = 'block';
+                
+                if (element) {
+                    element.classList.add('is-invalid');
+                    element.focus();
                     
-                    // Limiter à 10 lignes maximum
-                    if (lines >= 10 && e.key === 'Enter') {
-                        e.preventDefault();
-                        return false;
-                    }
+                    // Retirer la classe après correction
+                    element.addEventListener('input', function() {
+                        this.classList.remove('is-invalid');
+                    }, { once: true });
                 }
-            });
+                
+                // Faire défiler jusqu'à l'alerte
+                alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
 
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser le validateur
+            new CommentValidator();
+            console.log('CommentValidator initialized - Pure JavaScript validation active');
+            
             // Focus automatique sur le textarea
+            const textarea = document.getElementById('commentText');
             textarea.focus();
             textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            
+            // Initialiser le compteur avec la valeur actuelle
+            const initialLength = textarea.value.length;
+            document.getElementById('charCount').textContent = initialLength;
+            
+            // Mettre à jour le style du compteur
+            const counter = document.getElementById('charCounter');
+            if (initialLength > 450) {
+                counter.className = 'char-counter danger';
+            } else if (initialLength > 400) {
+                counter.className = 'char-counter warning';
+            }
+        });
+
+        // Empêcher la saisie de retours à la ligne multiples (optionnel)
+        document.getElementById('commentText').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const currentValue = this.value;
+                const lines = currentValue.split('\n').length;
+                
+                // Limiter à 10 lignes maximum
+                if (lines >= 10) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
         });
     </script>
 </body>

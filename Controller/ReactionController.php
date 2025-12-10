@@ -4,7 +4,7 @@ require_once __DIR__ . '/../Model/Reaction.php';
 
 class ReactionController {
 
-    // === MÉTHODES POUR LES RÉACTIONS (comme le front) ===
+    // === MÉTHODES POUR LE FRONT ET LE BACK ===
     
     public function addOrUpdateReaction(Reaction $r) {
         $db = config::getConnexion();
@@ -27,7 +27,7 @@ class ReactionController {
                     'idPub' => $r->getIdPublication(),
                     'idUser' => $r->getIdUser()
                 ]);
-                return $result;
+                return $result ? 'deleted' : false;
             } else {
                 // Sinon, mettre à jour le type
                 $sql = "UPDATE reaction SET type_reaction = :type 
@@ -38,7 +38,7 @@ class ReactionController {
                     'idPub' => $r->getIdPublication(),
                     'idUser' => $r->getIdUser()
                 ]);
-                return $result;
+                return $result ? 'updated' : false;
             }
         } else {
             // Insert nouvelle réaction
@@ -50,7 +50,7 @@ class ReactionController {
                 'idPub' => $r->getIdPublication(),
                 'idUser' => $r->getIdUser()
             ]);
-            return $result;
+            return $result ? 'added' : false;
         }
     }
 
@@ -117,7 +117,7 @@ class ReactionController {
         }
     }
 
-    // === MÉTHODES POUR L'ADMINISTRATION ===
+    // === MÉTHODES SPÉCIFIQUES POUR L'ADMINISTRATION ===
     
     public function getAllReactions($limit = 50, $offset = 0) {
         $sql = "SELECT r.*, u.nom as utilisateur_nom, p.texte as publication_texte
@@ -162,6 +162,14 @@ class ReactionController {
         try {
             $query = $db->prepare($sql);
             $result = $query->execute(['id' => $idReaction]);
+            
+            // Gérer les requêtes AJAX
+            if (isset($_POST['action']) && $_POST['action'] === 'deleteReaction') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => $result]);
+                exit();
+            }
+            
             return $result;
         } catch (PDOException $e) {
             error_log("Error deleting reaction: " . $e->getMessage());
@@ -227,6 +235,15 @@ class ReactionController {
             error_log("Error getting reactions by publication: " . $e->getMessage());
             return [];
         }
+    }
+}
+
+// Gérer les requêtes AJAX pour le back-office
+if (isset($_POST['action'])) {
+    $controller = new ReactionController();
+    
+    if ($_POST['action'] === 'deleteReaction' && isset($_POST['id_reaction'])) {
+        $controller->deleteReaction($_POST['id_reaction']);
     }
 }
 ?>

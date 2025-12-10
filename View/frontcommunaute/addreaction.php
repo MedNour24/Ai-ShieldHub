@@ -3,7 +3,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once __DIR__ . '/../../Controller/ReactionControllerFront.php';
+// MODIFIÉ : Utiliser le contrôleur unifié
+require_once __DIR__ . '/../../Controller/ReactionController.php';
 require_once __DIR__ . '/../../Model/Reaction.php';
 
 // Vérifier que les paramètres sont présents
@@ -24,7 +25,8 @@ if ($idPublication <= 0 || $idUser <= 0 || !in_array($type, ['like', 'dislike'])
 }
 
 try {
-    $reactionController = new ReactionControllerFront();
+    // MODIFIÉ : Utiliser le contrôleur unifié
+    $reactionController = new ReactionController();
     
     // Créer l'objet Reaction avec les bons paramètres
     $reaction = new Reaction(null, $idPublication, $idUser, $type);
@@ -45,7 +47,8 @@ try {
             'success' => true,
             'likes' => $likesCount,
             'dislikes' => $dislikesCount,
-            'userReaction' => $userReaction
+            'userReaction' => $userReaction,
+            'action' => $result // MODIFIÉ : Retourne l'action effectuée (added, updated, deleted)
         ]);
     } else {
         throw new Exception("Erreur lors de l'opération sur la base de données");

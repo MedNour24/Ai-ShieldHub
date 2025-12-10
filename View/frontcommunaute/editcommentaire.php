@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../../Controller/CommentaireControllerfront.php';
+require_once __DIR__ . '/../../Controller/CommentaireController.php';
 require_once __DIR__ . '/../../Model/Commentaire.php';
-require_once __DIR__ . '/../../Controller/PublicationControllerFront.php';
+require_once __DIR__ . '/../../Controller/PublicationController.php';
 require_once __DIR__ . '/../../Model/Publication.php';
 
 // Récupérer les paramètres
@@ -14,8 +14,9 @@ if ($idCommentaire <= 0) die("ID commentaire non spécifié !");
 if ($idUser <= 0) die("ID utilisateur non spécifié !");
 if ($idPublication <= 0) die("ID publication non spécifié !");
 
-$commentController = new CommentaireControllerfront();
-$pubController = new PublicationControllerFront();
+// MODIFIÉ : Utiliser le contrôleur unifié
+$commentController = new CommentaireController();
+$pubController = new PublicationController();
 
 // Récupérer le commentaire à modifier
 $commentaire = $commentController->getCommentaireById($idCommentaire);
@@ -24,6 +25,7 @@ if (!$commentaire) {
 }
 
 // Vérifier que l'utilisateur est bien le propriétaire du commentaire
+// MODIFIÉ : Utiliser 'id_utilisateur' au lieu de 'idUser' car c'est le nom de colonne dans la base
 if ($commentaire['id_utilisateur'] != $idUser) {
     die("Vous n'êtes pas autorisé à modifier ce commentaire !");
 }
@@ -36,7 +38,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
     $contenu = $_POST['contenu'] ?? '';
     
     if (!empty($contenu)) {
-        $commentaireObj = new Commentaire($idCommentaire, $idPublication, $idUser, $contenu, new DateTime($commentaire['date_commentaire']));
+        // MODIFIÉ : Créer l'objet Commentaire avec les bons paramètres
+        // Note: Vérifiez le constructeur de votre classe Commentaire pour l'ordre des paramètres
+        $commentaireObj = new Commentaire(
+            $idCommentaire, 
+            $idPublication, 
+            $idUser, 
+            $contenu, 
+            new DateTime($commentaire['date_commentaire'])
+        );
+        
+        // MODIFIÉ : Utiliser la méthode updateCommentaire du contrôleur unifié
         $commentController->updateCommentaire($commentaireObj);
         
         header("Location: addcommentaire.php?id_utilisateur=" . $idUser . "&id_publication=" . $idPublication);
@@ -365,6 +377,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
             transform: translateY(-2px);
         }
         
+        .error-message {
+            color: var(--accent);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .edit-comment-section {
                 padding: 80px 0 30px;
@@ -486,17 +505,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
                                 id="commentContent" 
                                 class="form-control" 
                                 placeholder="Share your thoughts about this publication..."
-                                maxlength="500"
-                                required
                             ><?= htmlspecialchars($commentaire['contenu']) ?></textarea>
                             <div class="char-counter"><?= strlen($commentaire['contenu']) ?>/500 characters</div>
+                            <div class="error-message" id="commentError"></div>
                         </div>
                         
                         <div class="action-buttons">
                             <a href="addcommentaire.php?id_utilisateur=<?= $idUser ?>&id_publication=<?= $idPublication ?>" class="btn-cancel">
                                 <i class="fas fa-times me-2"></i>Cancel
                             </a>
-                            <button type="submit" class="btn-comment">
+                            <button type="submit" class="btn-comment" id="submitButton">
                                 <i class="fas fa-save me-2"></i>Update Comment
                             </button>
                         </div>
@@ -511,38 +529,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
         // Character counter for comment textarea
         const commentTextarea = document.getElementById('commentContent');
         const charCounter = document.querySelector('.char-counter');
+        const commentError = document.getElementById('commentError');
+        const submitButton = document.getElementById('submitButton');
+        const maxChars = 500;
 
-        commentTextarea.addEventListener('input', function() {
-            const charCount = this.value.length;
-            const maxChars = 500;
+        function updateCharCounter() {
+            const charCount = commentTextarea.value.length;
             
-            if (charCount > maxChars) {
-                this.value = this.value.substring(0, maxChars);
-            }
+            // Mettre à jour le compteur
+            charCounter.textContent = `${charCount}/${maxChars} characters`;
             
-            charCounter.textContent = `${Math.min(charCount, maxChars)}/${maxChars} characters`;
-            
+            // Changer la couleur selon le nombre de caractères
             if (charCount > maxChars * 0.8) {
                 charCounter.style.color = '#ec4899';
             } else {
                 charCounter.style.color = '#e2e8f0';
             }
-        });
-
-        // Form validation
-        document.getElementById('editCommentForm').addEventListener('submit', function(e) {
-            const content = commentTextarea.value.trim();
             
-            if (content === '') {
-                e.preventDefault();
-                alert('Please enter your comment before updating.');
-                commentTextarea.focus();
-                return;
+            // Limiter automatiquement à 500 caractères
+            if (charCount > maxChars) {
+                commentTextarea.value = commentTextarea.value.substring(0, maxChars);
+                updateCharCounter();
             }
             
-            if (content.length > 500) {
+            // Valider en temps réel
+            validateForm();
+        }
+
+        function validateForm() {
+            const content = commentTextarea.value.trim();
+            let isValid = true;
+            
+            // Réinitialiser les erreurs
+            commentError.style.display = 'none';
+            commentError.textContent = '';
+            commentTextarea.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+            
+            // Validation du contenu vide
+            if (content === '') {
+                commentError.textContent = 'Please enter your comment before updating.';
+                commentError.style.display = 'block';
+                commentTextarea.style.borderColor = '#ec4899';
+                isValid = false;
+            }
+            
+            // Validation de la longueur
+            if (content.length > maxChars) {
+                commentError.textContent = `Comment cannot exceed ${maxChars} characters.`;
+                commentError.style.display = 'block';
+                commentTextarea.style.borderColor = '#ec4899';
+                isValid = false;
+            }
+            
+            // Activer/désactiver le bouton de soumission
+            submitButton.disabled = !isValid;
+            
+            return isValid;
+        }
+
+        // Événements
+        commentTextarea.addEventListener('input', updateCharCounter);
+        
+        // Validation à la perte de focus
+        commentTextarea.addEventListener('blur', validateForm);
+        
+        // Validation à la soumission du formulaire
+        document.getElementById('editCommentForm').addEventListener('submit', function(e) {
+            if (!validateForm()) {
                 e.preventDefault();
-                alert('Comment cannot exceed 500 characters.');
+                commentTextarea.focus();
                 return;
             }
             
@@ -551,6 +606,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
                 e.preventDefault();
                 return;
             }
+            
+            // Empêcher la double soumission
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
         });
 
         // Auto-resize textarea
@@ -559,8 +618,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        // Initialize character counter
-        commentTextarea.dispatchEvent(new Event('input'));
+        // Validation initiale
+        updateCharCounter();
+        validateForm();
     </script>
 </body>
 </html>

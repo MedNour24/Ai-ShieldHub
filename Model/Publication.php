@@ -29,6 +29,8 @@ class Publication {
         $this->nb_dislikes = $nb_dislikes;
     }
 
+    
+
     // Getters et setters
     public function getIdPublication(): ?int { return $this->id_publication; }
     public function setIdPublication(?int $id) { $this->id_publication = $id; }

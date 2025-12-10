@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../../Controller/CommentaireControllerfront.php';
+require_once __DIR__ . '/../../Controller/CommentaireController.php';
 require_once __DIR__ . '/../../Model/Commentaire.php';
-require_once __DIR__ . '/../../Controller/PublicationControllerFront.php';
+require_once __DIR__ . '/../../Controller/PublicationController.php';
 require_once __DIR__ . '/../../Model/Publication.php';
 
 $idUser = isset($_GET['id_utilisateur']) ? intval($_GET['id_utilisateur']) : 0;
@@ -11,8 +11,9 @@ $idPublication = isset($_GET['id_publication']) ? intval($_GET['id_publication']
 if ($idUser <= 0) die("ID utilisateur non spécifié !");
 if ($idPublication <= 0) die("ID publication non spécifié !");
 
-$commentController = new CommentaireControllerfront();
-$pubController = new PublicationControllerFront();
+// MODIFIÉ : Utiliser les contrôleurs unifiés
+$commentController = new CommentaireController();
+$pubController = new PublicationController();
 
 // Récupérer les informations de la publication
 $publication = $pubController->getPublicationById($idPublication);
@@ -23,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
     
     if (!empty($contenu)) {
         $commentaire = new Commentaire(null, $idPublication, $idUser, $contenu, new DateTime());
+        
+        // MODIFIÉ : Utiliser la méthode addCommentaire du contrôleur unifié
+        // La méthode retourne l'ID du commentaire inséré (comportement front)
         $commentController->addCommentaire($commentaire);
         
         header("Location: addcommentaire.php?id_utilisateur=" . $idUser . "&id_publication=" . $idPublication);
@@ -31,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
 }
 
 // ---------- RÉCUPÉRATION DES COMMENTAIRES ----------
+// MODIFIÉ : Utiliser la méthode getCommentairesByPublication du contrôleur unifié
 $commentaires = $commentController->getCommentairesByPublication($idPublication);
 ?>
 
@@ -327,6 +332,7 @@ $commentaires = $commentController->getCommentairesByPublication($idPublication)
         
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
         
         .form-group label {
@@ -390,6 +396,13 @@ $commentaires = $commentController->getCommentairesByPublication($idPublication)
             color: var(--light);
             font-size: 12px;
             margin-top: 5px;
+        }
+        
+        .error-message {
+            color: var(--accent);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
         }
         
         .empty-state {
@@ -527,12 +540,11 @@ $commentaires = $commentController->getCommentairesByPublication($idPublication)
                                 id="commentContent" 
                                 class="form-control" 
                                 placeholder="Share your thoughts about this publication..."
-                                maxlength="500"
-                                required
                             ></textarea>
-                            <div class="char-counter">0/500 characters</div>
+                            <div class="char-counter" id="charCounter">0/500 characters</div>
+                            <div class="error-message" id="commentError"></div>
                         </div>
-                        <button type="submit" class="btn-comment">
+                        <button type="submit" class="btn-comment" id="submitButton">
                             <i class="fas fa-paper-plane me-2"></i>Post Comment
                         </button>
                     </form>
@@ -593,53 +605,104 @@ $commentaires = $commentController->getCommentairesByPublication($idPublication)
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Character counter for comment textarea
-        const commentTextarea = document.getElementById('commentContent');
-        const charCounter = document.querySelector('.char-counter');
+        // Validation du formulaire de commentaire
+        class CommentValidator {
+            constructor() {
+                this.commentTextarea = document.getElementById('commentContent');
+                this.charCounter = document.getElementById('charCounter');
+                this.commentError = document.getElementById('commentError');
+                this.submitButton = document.getElementById('submitButton');
+                this.maxChars = 500;
+                
+                this.init();
+            }
 
-        commentTextarea.addEventListener('input', function() {
-            const charCount = this.value.length;
-            const maxChars = 500;
-            
-            if (charCount > maxChars) {
-                this.value = this.value.substring(0, maxChars);
+            init() {
+                // Événements de validation
+                this.commentTextarea.addEventListener('input', this.updateCharCounter.bind(this));
+                this.commentTextarea.addEventListener('blur', this.validateForm.bind(this));
+                
+                // Validation à la soumission
+                document.getElementById('commentForm').addEventListener('submit', this.handleSubmit.bind(this));
+                
+                // Validation initiale
+                this.updateCharCounter();
+                this.validateForm();
             }
-            
-            charCounter.textContent = `${Math.min(charCount, maxChars)}/${maxChars} characters`;
-            
-            if (charCount > maxChars * 0.8) {
-                charCounter.style.color = '#ec4899';
-            } else {
-                charCounter.style.color = '#e2e8f0';
-            }
-        });
 
-        // Form validation
-        document.getElementById('commentForm').addEventListener('submit', function(e) {
-            const content = commentTextarea.value.trim();
-            
-            if (content === '') {
-                e.preventDefault();
-                alert('Please enter your comment before posting.');
-                commentTextarea.focus();
-                return;
+            updateCharCounter() {
+                const charCount = this.commentTextarea.value.length;
+                
+                // Mettre à jour le compteur
+                this.charCounter.textContent = `${charCount}/${this.maxChars} characters`;
+                
+                // Changer la couleur selon le nombre de caractères
+                if (charCount > this.maxChars * 0.8) {
+                    this.charCounter.style.color = '#ec4899';
+                } else {
+                    this.charCounter.style.color = '#e2e8f0';
+                }
+                
+                // Limiter automatiquement à 500 caractères
+                if (charCount > this.maxChars) {
+                    this.commentTextarea.value = this.commentTextarea.value.substring(0, this.maxChars);
+                    this.updateCharCounter();
+                }
+                
+                // Valider en temps réel
+                this.validateForm();
             }
-            
-            if (content.length > 500) {
-                e.preventDefault();
-                alert('Comment cannot exceed 500 characters.');
-                return;
+
+            validateForm() {
+                const content = this.commentTextarea.value.trim();
+                let isValid = true;
+                
+                // Réinitialiser les erreurs
+                this.commentError.style.display = 'none';
+                this.commentError.textContent = '';
+                this.commentTextarea.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                
+                // Validation du contenu vide
+                if (content === '') {
+                    this.commentError.textContent = 'Please enter your comment before posting.';
+                    this.commentError.style.display = 'block';
+                    this.commentTextarea.style.borderColor = '#ec4899';
+                    isValid = false;
+                }
+                
+                // Validation de la longueur
+                if (content.length > this.maxChars) {
+                    this.commentError.textContent = `Comment cannot exceed ${this.maxChars} characters.`;
+                    this.commentError.style.display = 'block';
+                    this.commentTextarea.style.borderColor = '#ec4899';
+                    isValid = false;
+                }
+                
+                // Activer/désactiver le bouton de soumission
+                this.submitButton.disabled = !isValid;
+                
+                return isValid;
             }
-        });
+
+            handleSubmit(event) {
+                if (!this.validateForm()) {
+                    event.preventDefault();
+                    this.commentTextarea.focus();
+                    return;
+                }
+                
+                // Empêcher la double soumission
+                this.submitButton.disabled = true;
+                this.submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Posting...';
+            }
+        }
 
         // Auto-resize textarea
+        const commentTextarea = document.getElementById('commentContent');
         commentTextarea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
-
-        // Initialize character counter
-        commentTextarea.dispatchEvent(new Event('input'));
 
         // Confirmation pour la suppression
         document.querySelectorAll('.btn-delete-comment').forEach(button => {
@@ -648,6 +711,11 @@ $commentaires = $commentController->getCommentairesByPublication($idPublication)
                     e.preventDefault();
                 }
             });
+        });
+
+        // Initialiser la validation au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            new CommentValidator();
         });
     </script>
 </body>

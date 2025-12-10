@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../Controller/PublicationControllerFront.php';
+require_once __DIR__ . '/../../Controller/PublicationController.php';
 require_once __DIR__ . '/../../Model/Publication.php';
 
 $idUser = isset($_GET['id_utilisateur']) ? intval($_GET['id_utilisateur']) : 0;
@@ -7,7 +7,7 @@ $idPub  = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if($idUser<=0 || $idPub<=0) die("Paramètres manquants !");
 
-$pubController = new PublicationControllerFront();
+$pubController = new PublicationController();
 $publication = $pubController->getPublicationById($idPub);
 
 if(!$publication) die("Publication introuvable !");
@@ -227,6 +227,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         
         .form-group {
             margin-bottom: 25px;
+            position: relative;
         }
         
         .form-group label {
@@ -330,6 +331,26 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
         }
         
+        .btn-update:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .char-counter {
+            text-align: right;
+            color: var(--light);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .error-message {
+            color: var(--accent);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .section-title h2 { font-size: 32px; }
         }
@@ -397,6 +418,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                     <div class="form-group">
                         <label for="postText"><i class="fas fa-edit me-2"></i>Content</label>
                         <textarea name="texte" id="postText" rows="6" placeholder="Update your publication content..."><?= htmlspecialchars($publication['texte']) ?></textarea>
+                        <div class="char-counter" id="charCounter"><?= strlen($publication['texte']) ?>/200 characters</div>
+                        <div class="error-message" id="textError"></div>
                     </div>
                     
                     <div class="form-group">
@@ -418,7 +441,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                         <?php endif; ?>
                     </div>
                     
-                    <button type="submit" class="btn-update">
+                    <button type="submit" class="btn-update" id="submitButton">
                         <i class="fas fa-save me-2"></i>Update Publication
                     </button>
                 </form>
@@ -428,21 +451,103 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Contrôle JS - Même validation que dans addPublication.php
-        const form = document.getElementById('formEdit');
-        form.addEventListener('submit', function(e){
-            const texte = document.getElementById('postText').value.trim();
-            if(texte === ''){ 
-                alert('Le texte ne peut pas être vide !'); 
-                e.preventDefault(); 
-                return; 
+        // Validation du formulaire d'édition
+        class EditPublicationValidator {
+            constructor() {
+                this.postText = document.getElementById('postText');
+                this.charCounter = document.getElementById('charCounter');
+                this.textError = document.getElementById('textError');
+                this.submitButton = document.getElementById('submitButton');
+                this.maxChars = 200;
+                
+                this.init();
             }
-            if(texte.length > 200){ 
-                alert('Le texte ne peut pas dépasser 200 caractères !'); 
-                e.preventDefault(); 
-                return; 
+
+            init() {
+                // Événements de validation
+                this.postText.addEventListener('input', this.updateCharCounter.bind(this));
+                this.postText.addEventListener('blur', this.validateForm.bind(this));
+                
+                // Validation à la soumission
+                document.getElementById('formEdit').addEventListener('submit', this.handleSubmit.bind(this));
+                
+                // Validation initiale
+                this.updateCharCounter();
+                this.validateForm();
             }
-        });
+
+            updateCharCounter() {
+                const charCount = this.postText.value.length;
+                
+                // Mettre à jour le compteur
+                this.charCounter.textContent = `${charCount}/${this.maxChars} characters`;
+                
+                // Changer la couleur selon le nombre de caractères
+                if (charCount > this.maxChars * 0.8) {
+                    this.charCounter.style.color = '#ec4899';
+                } else {
+                    this.charCounter.style.color = '#e2e8f0';
+                }
+                
+                // Limiter automatiquement à 200 caractères
+                if (charCount > this.maxChars) {
+                    this.postText.value = this.postText.value.substring(0, this.maxChars);
+                    this.updateCharCounter();
+                }
+                
+                // Valider en temps réel
+                this.validateForm();
+            }
+
+            validateForm() {
+                const content = this.postText.value.trim();
+                let isValid = true;
+                
+                // Réinitialiser les erreurs
+                this.textError.style.display = 'none';
+                this.textError.textContent = '';
+                this.postText.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                
+                // Validation du contenu vide
+                if (content === '') {
+                    this.textError.textContent = 'Please enter your publication content.';
+                    this.textError.style.display = 'block';
+                    this.postText.style.borderColor = '#ec4899';
+                    isValid = false;
+                }
+                
+                // Validation de la longueur
+                if (content.length > this.maxChars) {
+                    this.textError.textContent = `Publication cannot exceed ${this.maxChars} characters.`;
+                    this.textError.style.display = 'block';
+                    this.postText.style.borderColor = '#ec4899';
+                    isValid = false;
+                }
+                
+                // Activer/désactiver le bouton de soumission
+                this.submitButton.disabled = !isValid;
+                
+                return isValid;
+            }
+
+            handleSubmit(event) {
+                if (!this.validateForm()) {
+                    event.preventDefault();
+                    this.postText.focus();
+                    return;
+                }
+                
+                // Confirmation pour la modification
+                if (!confirm('Are you sure you want to update this publication?')) {
+                    event.preventDefault();
+                    return;
+                }
+                
+                // Empêcher la double soumission
+                this.submitButton.disabled = true;
+                this.submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            }
+        }
 
         // Gestion de l'affichage du nom du fichier
         const fileInput = document.getElementById('fileInput');
@@ -463,6 +568,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 }
             });
         }
+
+        // Initialiser la validation au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            new EditPublicationValidator();
+        });
     </script>
 </body>
 </html>

@@ -43,14 +43,13 @@ $limit = 10;
 $page = isset($_GET['page']) ? max(1,intval($_GET['page'])) : 1;
 $offset = ($page-1)*$limit;
 
-// Récupérer le total pour la pagination
-$total = $pubController->countPublications();
+// CORRECTION : Utiliser countAllPublications() au lieu de countPublications()
+$total = $pubController->countAllPublications();
 $totalPages = ceil($total/$limit);
 
 // Récupérer les publications pour la page actuelle
 $publications = $pubController->listAdminPublications($limit, $offset);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -609,6 +608,21 @@ $publications = $pubController->listAdminPublications($limit, $offset);
       .reaction-total-icon.dislikes {
         color: #dc3545;
       }
+
+      /* Styles pour le bouton d'ajout */
+      .btn-add-publication {
+        background: linear-gradient(135deg, #1572e8, #0a58ca);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .btn-add-publication:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(21, 114, 232, 0.3);
+      }
     </style>
   </head>
   <body>
@@ -832,45 +846,12 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                   <h6 class="op-7 mb-2">Manage all community publications</h6>
                 </div>
                 <div class="ms-md-auto py-2 py-md-0">
+                  <button class="btn btn-add-publication me-2" data-bs-toggle="modal" data-bs-target="#addPublicationModal">
+                    <i class="fas fa-plus me-2"></i>Add Publication
+                  </button>
                   <span class="badge badge-primary">
                     Total Publications: <?= $total ?>
                   </span>
-                </div>
-              </div>
-
-              <!-- Publication Form -->
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="card card-round">
-                    <div class="card-header">
-                      <div class="card-head-row">
-                        <div class="card-title">Create New Publication</div>
-                      </div>
-                    </div>
-                    <div class="card-body">
-                      <form id="formPublication" action="" method="POST" enctype="multipart/form-data">
-                        <div class="form-group">
-                          <label for="postText"><i class="fas fa-edit me-2"></i>Publication Content</label>
-                          <textarea name="texte" id="postText" class="form-control" rows="6" placeholder="Write your publication content here..."></textarea>
-                          <small class="form-text text-muted">Maximum 200 characters allowed</small>
-                        </div>
-                        
-                        <div class="form-group">
-                          <label for="fileInput"><i class="fas fa-paperclip me-2"></i>Attach File</label>
-                          <div class="file-input-wrapper">
-                            <input type="file" name="file" id="fileInput">
-                            <div class="file-input-label">
-                              <i class="fas fa-cloud-upload-alt me-2"></i>Choose a file to upload (optional)
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <button type="submit" class="btn-publish">
-                          <i class="fas fa-paper-plane me-2"></i>Publish
-                        </button>
-                      </form>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -956,7 +937,7 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                         <div class="empty-state">
                           <i class="fas fa-newspaper fa-3x mb-3 text-muted"></i>
                           <h5>No Publications Yet</h5>
-                          <p class="text-muted">Start by creating the first publication above!</p>
+                          <p class="text-muted">Click the "Add Publication" button to create your first publication!</p>
                         </div>
                       <?php endif; ?>
                       
@@ -1042,6 +1023,45 @@ $publications = $pubController->listAdminPublications($limit, $offset);
       </div>
     </div>
 
+    <!-- Modal pour l'ajout de publication -->
+    <div class="modal fade" id="addPublicationModal" tabindex="-1" aria-labelledby="addPublicationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addPublicationModalLabel">
+              <i class="fas fa-plus me-2"></i>Create New Publication
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="formPublication" action="" method="POST" enctype="multipart/form-data">
+              <div class="form-group">
+                <label for="postText"><i class="fas fa-edit me-2"></i>Publication Content</label>
+                <textarea name="texte" id="postText" class="form-control" rows="6" placeholder="Write your publication content here..."></textarea>
+                <small class="form-text text-muted">Maximum 200 characters allowed</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="fileInput"><i class="fas fa-paperclip me-2"></i>Attach File</label>
+                <div class="file-input-wrapper">
+                  <input type="file" name="file" id="fileInput">
+                  <div class="file-input-label">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Choose a file to upload (optional)
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" form="formPublication" class="btn btn-publish">
+              <i class="fas fa-paper-plane me-2"></i>Publish
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Core JS Files -->
     <script src="assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="assets/js/core/popper.min.js"></script>
@@ -1051,14 +1071,253 @@ $publications = $pubController->listAdminPublications($limit, $offset);
     <script src="assets/js/kaiadmin.min.js"></script>
 
     <script>
-      // Système de réactions avec JavaScript
+      // =============================================
+      // SYSTÈME DE VALIDATION JAVASCRIPT STRICT
+      // =============================================
+
+      class FormValidator {
+          constructor() {
+              this.maxTextLength = 200;
+              this.maxFileSize = 10 * 1024 * 1024; // 10MB
+              this.allowedFileTypes = [
+                  'image/jpeg', 
+                  'image/png', 
+                  'image/gif', 
+                  'application/pdf', 
+                  'text/plain'
+              ];
+              this.init();
+          }
+
+          init() {
+              this.attachFormValidation();
+              this.attachRealTimeValidation();
+              this.attachFileValidation();
+          }
+
+          attachFormValidation() {
+              const form = document.getElementById('formPublication');
+              
+              form.addEventListener('submit', (e) => {
+                  console.log('Form submission intercepted by JavaScript validation');
+                  
+                  // Empêcher TOUJOURS la soumission par défaut
+                  e.preventDefault();
+                  
+                  // Valider le formulaire
+                  if (this.validateForm()) {
+                      console.log('Form validation successful, submitting...');
+                      // Si validation OK, soumettre le formulaire
+                      form.submit();
+                  } else {
+                      console.log('Form validation failed');
+                  }
+              });
+          }
+
+          validateForm() {
+              console.log('Starting form validation...');
+              
+              const textarea = document.getElementById('postText');
+              const fileInput = document.getElementById('fileInput');
+              const texte = textarea.value.trim();
+              
+              // Réinitialiser les états de validation
+              this.resetValidationStates();
+              
+              let isValid = true;
+              
+              // Validation du texte (obligatoire)
+              if (texte === '') {
+                  this.showError('Le texte de la publication est obligatoire !', textarea);
+                  isValid = false;
+              } else if (texte.length > this.maxTextLength) {
+                  this.showError(`Le texte ne peut pas dépasser ${this.maxTextLength} caractères ! Actuellement: ${texte.length} caractères`, textarea);
+                  isValid = false;
+              }
+              
+              // Validation du fichier (optionnel mais contrôlé)
+              if (fileInput.files.length > 0) {
+                  const file = fileInput.files[0];
+                  
+                  if (file.size > this.maxFileSize) {
+                      this.showError(`Le fichier est trop volumineux. Taille maximum: ${this.formatFileSize(this.maxFileSize)}`, fileInput);
+                      isValid = false;
+                  }
+                  
+                  if (!this.allowedFileTypes.includes(file.type)) {
+                      this.showError('Type de fichier non autorisé. Types acceptés: JPG, PNG, GIF, PDF, TXT', fileInput);
+                      isValid = false;
+                  }
+              }
+              
+              if (isValid) {
+                  this.showSuccess('Validation réussie ! Publication en cours...');
+              }
+              
+              return isValid;
+          }
+
+          attachRealTimeValidation() {
+              const textarea = document.getElementById('postText');
+              
+              textarea.addEventListener('input', () => {
+                  const charCount = textarea.value.length;
+                  this.updateCharCounter(charCount);
+                  
+                  // Validation visuelle en temps réel
+                  if (charCount > this.maxTextLength) {
+                      textarea.classList.add('is-invalid');
+                  } else {
+                      textarea.classList.remove('is-invalid');
+                  }
+              });
+              
+              // Initialiser le compteur
+              this.updateCharCounter(textarea.value.length);
+          }
+
+          attachFileValidation() {
+              const fileInput = document.getElementById('fileInput');
+              const fileInputLabel = document.querySelector('.file-input-label');
+              
+              fileInput.addEventListener('change', () => {
+                  if (fileInput.files.length > 0) {
+                      const file = fileInput.files[0];
+                      
+                      // Mettre à jour l'affichage du fichier
+                      fileInputLabel.innerHTML = `<i class="fas fa-file me-2"></i>${file.name} (${this.formatFileSize(file.size)})`;
+                      fileInputLabel.style.background = '#e3f2fd';
+                      fileInputLabel.style.borderColor = '#1572e8';
+                      fileInputLabel.style.color = '#1572e8';
+                      
+                      // Validation immédiate du fichier
+                      if (file.size > this.maxFileSize) {
+                          this.showError(`Fichier trop volumineux. Maximum ${this.formatFileSize(this.maxFileSize)} autorisé.`, fileInput);
+                          fileInput.value = '';
+                          this.resetFileInputLabel();
+                      } else if (!this.allowedFileTypes.includes(file.type)) {
+                          this.showError('Type de fichier non autorisé', fileInput);
+                          fileInput.value = '';
+                          this.resetFileInputLabel();
+                      }
+                  } else {
+                      this.resetFileInputLabel();
+                  }
+              });
+          }
+
+          updateCharCounter(charCount) {
+              let counter = document.getElementById('postText').parentElement.querySelector('.char-counter');
+              if (!counter) {
+                  counter = document.createElement('small');
+                  counter.className = 'form-text char-counter';
+                  counter.id = 'charCounter';
+                  document.getElementById('postText').parentElement.appendChild(counter);
+              }
+              
+              counter.textContent = `${charCount}/${this.maxTextLength} caractères`;
+              
+              if (charCount > this.maxTextLength) {
+                  counter.style.color = '#dc3545';
+                  counter.style.fontWeight = 'bold';
+              } else if (charCount > this.maxTextLength * 0.8) {
+                  counter.style.color = '#ffc107';
+                  counter.style.fontWeight = 'bold';
+              } else {
+                  counter.style.color = '#6c757d';
+                  counter.style.fontWeight = 'normal';
+              }
+          }
+
+          resetValidationStates() {
+              // Supprimer toutes les alertes existantes
+              document.querySelectorAll('.alert').forEach(alert => {
+                  if (alert.parentNode) {
+                      alert.remove();
+                  }
+              });
+              
+              // Réinitialiser les styles des champs
+              document.querySelectorAll('.is-invalid').forEach(el => {
+                  el.classList.remove('is-invalid');
+              });
+          }
+
+          resetFileInputLabel() {
+              const fileInputLabel = document.querySelector('.file-input-label');
+              fileInputLabel.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Choose a file to upload (optional)';
+              fileInputLabel.style.background = '#f8f9fa';
+              fileInputLabel.style.borderColor = '#dee2e6';
+              fileInputLabel.style.color = '#6c757d';
+          }
+
+          showError(message, element = null) {
+              const alertDiv = document.createElement('div');
+              alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+              alertDiv.innerHTML = `
+                  <strong>Erreur de validation:</strong> ${message}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              `;
+              
+              const modalBody = document.querySelector('#addPublicationModal .modal-body');
+              modalBody.insertBefore(alertDiv, modalBody.firstChild);
+              
+              if (element) {
+                  element.classList.add('is-invalid');
+                  element.focus();
+                  
+                  // Retirer la classe après correction
+                  element.addEventListener('input', function() {
+                      this.classList.remove('is-invalid');
+                  }, { once: true });
+              }
+              
+              // Auto-supprimer après 5 secondes
+              setTimeout(() => {
+                  if (alertDiv.parentNode) {
+                      alertDiv.remove();
+                  }
+              }, 5000);
+          }
+
+          showSuccess(message) {
+              const alertDiv = document.createElement('div');
+              alertDiv.className = 'alert alert-success alert-dismissible fade show';
+              alertDiv.innerHTML = `
+                  <strong>Succès:</strong> ${message}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              `;
+              
+              const modalBody = document.querySelector('#addPublicationModal .modal-body');
+              modalBody.insertBefore(alertDiv, modalBody.firstChild);
+              
+              setTimeout(() => {
+                  if (alertDiv.parentNode) {
+                      alertDiv.remove();
+                  }
+              }, 3000);
+          }
+
+          formatFileSize(bytes) {
+              if (bytes === 0) return '0 Bytes';
+              const k = 1024;
+              const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+              const i = Math.floor(Math.log(bytes) / Math.log(k));
+              return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+          }
+      }
+
+      // =============================================
+      // SYSTÈME DE RÉACTIONS
+      // =============================================
+
       class ReactionSystem {
           constructor() {
               this.init();
           }
 
           init() {
-              // Initialiser les événements pour tous les boutons de réaction
               document.querySelectorAll('.reaction-btn').forEach(btn => {
                   btn.addEventListener('click', this.handleReaction.bind(this));
               });
@@ -1087,11 +1346,11 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                       this.updateReactionUI(publicationId, response);
                   } else {
                       console.error('Erreur:', response.message);
-                      alert('Erreur: ' + (response.message || 'Erreur lors de l\'enregistrement de la réaction'));
+                      this.showReactionError('Erreur: ' + (response.message || 'Erreur lors de l\'enregistrement de la réaction'));
                   }
               } catch (error) {
                   console.error('Erreur:', error);
-                  alert('Erreur de connexion au serveur');
+                  this.showReactionError('Erreur de connexion au serveur');
               } finally {
                   button.disabled = false;
                   button.innerHTML = originalHTML;
@@ -1122,8 +1381,6 @@ $publications = $pubController->listAdminPublications($limit, $offset);
               const likeCount = document.querySelector(`.like-count[data-publication-id="${publicationId}"]`);
               const dislikeCount = document.querySelector(`.dislike-count[data-publication-id="${publicationId}"]`);
 
-              console.log('Updating UI:', { publicationId, data, likeBtn, dislikeBtn, likeCount, dislikeCount });
-
               // Mettre à jour les compteurs
               if (likeCount) likeCount.textContent = data.likes;
               if (dislikeCount) dislikeCount.textContent = data.dislikes;
@@ -1144,349 +1401,249 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                   button.classList.add('active', buttonType + 'd');
               }
           }
+
+          showReactionError(message) {
+              const alertDiv = document.createElement('div');
+              alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+              alertDiv.innerHTML = `
+                  <strong>Erreur réaction:</strong> ${message}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              `;
+              
+              document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
+              
+              setTimeout(() => {
+                  if (alertDiv.parentNode) {
+                      alertDiv.remove();
+                  }
+              }, 5000);
+          }
       }
 
-      // Contrôle de saisie amélioré
-      function showError(message, element = null) {
-          // Créer une alerte plus stylée
-          const alertDiv = document.createElement('div');
-          alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-          alertDiv.innerHTML = `
-              <strong>Erreur:</strong> ${message}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          `;
-          
-          // Insérer avant le formulaire
-          const form = document.getElementById('formPublication');
-          form.parentNode.insertBefore(alertDiv, form);
-          
-          // Focus sur l'élément problématique si spécifié
-          if (element) {
-              element.focus();
-              element.classList.add('is-invalid');
-              
-              // Retirer la classe après correction
-              element.addEventListener('input', function() {
-                  this.classList.remove('is-invalid');
-              }, { once: true });
-          }
-          
-          // Auto-supprimer après 5 secondes
-          setTimeout(() => {
-              if (alertDiv.parentNode) {
-                  alertDiv.remove();
-              }
-          }, 5000);
-      }
+      // =============================================
+      // INITIALISATION AU CHARGEMENT DE LA PAGE
+      // =============================================
 
-      function validateForm() {
-          const textarea = document.getElementById('postText');
-          const texte = textarea.value.trim();
+      document.addEventListener('DOMContentLoaded', function() {
+          // Initialiser le validateur de formulaire
+          new FormValidator();
+          console.log('FormValidator initialized - Pure JavaScript validation active');
           
-          // Supprimer les anciennes alertes
-          document.querySelectorAll('.alert').forEach(alert => alert.remove());
+          // Initialiser le système de réactions
+          new ReactionSystem();
+          console.log('ReactionSystem initialized');
           
-          // Validation du texte
-          if (texte === '') {
-              showError('Le texte de la publication ne peut pas être vide !', textarea);
-              return false;
-          }
+          // Initialiser les autres fonctionnalités
+          initializePageNavigation();
+          initializePubUserFeatures();
           
-          if (texte.length > 200) {
-              showError('Le texte ne peut pas dépasser 200 caractères ! Actuellement: ' + texte.length + ' caractères', textarea);
-              return false;
-          }
-          
-          // Validation du fichier (optionnel)
-          const fileInput = document.getElementById('fileInput');
-          if (fileInput.files.length > 0) {
-              const file = fileInput.files[0];
-              const maxSize = 10 * 1024 * 1024; // 10MB
-              const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain'];
+          // Réinitialiser le modal quand il est fermé
+          $('#addPublicationModal').on('hidden.bs.modal', function () {
+              document.getElementById('formPublication').reset();
+              document.querySelector('.file-input-label').innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Choose a file to upload (optional)';
+              document.querySelector('.file-input-label').style.background = '#f8f9fa';
+              document.querySelector('.file-input-label').style.borderColor = '#dee2e6';
+              document.querySelector('.file-input-label').style.color = '#6c757d';
               
-              if (file.size > maxSize) {
-                  showError('Le fichier est trop volumineux. Taille maximum: 10MB', fileInput);
-                  return false;
-              }
-              
-              if (!allowedTypes.includes(file.type)) {
-                  showError('Type de fichier non autorisé. Types acceptés: JPG, PNG, GIF, PDF, TXT', fileInput);
-                  return false;
-              }
-          }
-          
-          return true;
-      }
-
-      $(document).ready(function() {
-        // Initialiser le système de réactions
-        new ReactionSystem();
-        console.log('Reaction system initialized');
-
-        // Gestion de l'affichage du nom du fichier
-        const fileInput = document.getElementById('fileInput');
-        const fileInputLabel = document.querySelector('.file-input-label');
-        
-        if (fileInput && fileInputLabel) {
-          fileInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-              fileInputLabel.innerHTML = '<i class="fas fa-file me-2"></i>' + this.files[0].name;
-              fileInputLabel.style.background = '#e3f2fd';
-              fileInputLabel.style.borderColor = '#1572e8';
-              fileInputLabel.style.color = '#1572e8';
-            } else {
-              fileInputLabel.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Choose a file to upload (optional)';
-              fileInputLabel.style.background = '#f8f9fa';
-              fileInputLabel.style.borderColor = '#dee2e6';
-              fileInputLabel.style.color = '#6c757d';
-            }
+              // Supprimer les messages d'erreur
+              document.querySelectorAll('.alert').forEach(alert => alert.remove());
+              document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
           });
-        }
+      });
 
-        // Contrôle JS du formulaire
-        const form = document.getElementById('formPublication');
-        form.addEventListener('submit', function(e) {
-            if (!validateForm()) {
-                e.preventDefault();
-                return false;
-            }
-        });
+      // =============================================
+      // FONCTIONNALITÉS DE NAVIGATION ET PUBUSER
+      // =============================================
 
-        // Auto-resize textarea
-        const textarea = document.getElementById('postText');
-        textarea.addEventListener('input', function() {
-          const charCount = this.value.length;
-          const maxChars = 200;
-          
-          // Mettre à jour le compteur
-          let counter = this.parentElement.querySelector('.char-counter');
-          if (!counter) {
-              counter = document.createElement('small');
-              counter.className = 'form-text char-counter';
-              this.parentElement.appendChild(counter);
-          }
-          
-          counter.innerHTML = `${charCount}/${maxChars} caractères`;
-          
-          // Changer la couleur selon le nombre de caractères
-          if (charCount > maxChars) {
-              counter.style.color = '#dc3545';
-              this.classList.add('is-invalid');
-          } else if (charCount > maxChars * 0.8) {
-              counter.style.color = '#ffc107';
-              this.classList.remove('is-invalid');
-          } else {
-              counter.style.color = '#6c757d';
-              this.classList.remove('is-invalid');
-          }
-          
-          // Empêcher de dépasser la limite
-          if (charCount > maxChars) {
-              this.value = this.value.substring(0, maxChars);
-              counter.innerHTML = `${maxChars}/${maxChars} caractères (limite atteinte)`;
-          }
-        });
+      function initializePageNavigation() {
+          $('.nav-link[data-page]').on('click', function(e) {
+              e.preventDefault();
+              const page = $(this).data('page');
+              
+              // Update active state in sidebar
+              $('.nav-item').removeClass('active');
+              $(this).closest('.nav-item').addClass('active');
+              
+              // Show corresponding page content
+              $('.page-content').removeClass('active');
+              $(`#${page}-page`).addClass('active');
+              
+              // Load pubuser publications if switching to pubuser page
+              if (page === 'pubuser') {
+                  loadPubUserPublications();
+              }
+          });
+      }
 
-        // Validation du fichier
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    const file = this.files[0];
-                    const maxSize = 10 * 1024 * 1024;
-                    
-                    if (file.size > maxSize) {
-                        showError('Fichier trop volumineux. Maximum 10MB autorisés.', this);
-                        this.value = ''; // Réinitialiser le fichier
-                    }
-                }
-            });
-        }
+      function initializePubUserFeatures() {
+          $('#refresh-pubuser').on('click', function() {
+              loadPubUserPublications();
+          });
 
-        // Page Navigation
-        $('.nav-link[data-page]').on('click', function(e) {
-          e.preventDefault();
-          const page = $(this).data('page');
-          
-          // Update active state in sidebar
-          $('.nav-item').removeClass('active');
-          $(this).closest('.nav-item').addClass('active');
-          
-          // Show corresponding page content
-          $('.page-content').removeClass('active');
-          $(`#${page}-page`).addClass('active');
-          
-          // Load pubuser publications if switching to pubuser page
-          if (page === 'pubuser') {
-            loadPubUserPublications();
-          }
-        });
+          $('#search-pubuser').on('input', function() {
+              const searchTerm = $(this).val().toLowerCase();
+              filterPubUserPublications(searchTerm);
+          });
+      }
 
-        // Refresh pubuser publications
-        $('#refresh-pubuser').on('click', function() {
-          loadPubUserPublications();
-        });
+      // =============================================
+      // FONCTIONS PUBUSER EXISTANTES (conservées)
+      // =============================================
 
-        // Search functionality for pubuser
-        $('#search-pubuser').on('input', function() {
-          const searchTerm = $(this).val().toLowerCase();
-          filterPubUserPublications(searchTerm);
-        });
+      let allPubUserPublications = [];
 
-        let allPubUserPublications = [];
-
-        function loadPubUserPublications(page = 1) {
+      function loadPubUserPublications(page = 1) {
           $.ajax({
-            url: '../../controller/PublicationController.php',
-            type: 'GET',
-            data: { 
-              action: 'listUserPublications',
-              page: page,
-              limit: 10
-            },
-            dataType: 'json',
-            beforeSend: function() {
-              $('#pubuser-tbody').html(`
-                <tr class="loading-spinner">
-                  <td colspan="6" class="text-center">
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                    Loading publications...
-                  </td>
-                </tr>
-              `);
-            },
-            success: function(response) {
-              if (response.success) {
-                allPubUserPublications = response.data;
-                displayPubUserPublications(response.data, page);
-                updatePubUserPagination(response.total, response.currentPage, response.totalPages);
-              } else {
-                showError('Failed to load publications: ' + (response.message || 'Unknown error'));
+              url: '../../controller/PublicationController.php',
+              type: 'GET',
+              data: { 
+                  action: 'listUserPublications',
+                  page: page,
+                  limit: 10
+              },
+              dataType: 'json',
+              beforeSend: function() {
+                  $('#pubuser-tbody').html(`
+                  <tr class="loading-spinner">
+                      <td colspan="6" class="text-center">
+                      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Loading publications...
+                      </td>
+                  </tr>
+                  `);
+              },
+              success: function(response) {
+                  if (response.success) {
+                      allPubUserPublications = response.data;
+                      displayPubUserPublications(response.data, page);
+                      updatePubUserPagination(response.total, response.currentPage, response.totalPages);
+                  } else {
+                      showError('Failed to load publications: ' + (response.message || 'Unknown error'));
+                  }
+              },
+              error: function(xhr, status, error) {
+                  showError('Error loading publications: ' + error);
               }
-            },
-            error: function(xhr, status, error) {
-              showError('Error loading publications: ' + error);
-            }
           });
-        }
+      }
 
-        function displayPubUserPublications(publications, currentPage = 1) {
+      function displayPubUserPublications(publications, currentPage = 1) {
           const tbody = $('#pubuser-tbody');
           tbody.empty();
 
           if (publications.length === 0) {
-            tbody.html(`
+              tbody.html(`
               <tr>
-                <td colspan="6" class="text-center py-4">
+                  <td colspan="6" class="text-center py-4">
                   <div class="empty-state">
-                    <i class="fas fa-newspaper fa-3x mb-3 text-muted"></i>
-                    <h5>No Publications Found</h5>
-                    <p class="text-muted">No user publications available at the moment.</p>
+                      <i class="fas fa-newspaper fa-3x mb-3 text-muted"></i>
+                      <h5>No Publications Found</h5>
+                      <p class="text-muted">No user publications available at the moment.</p>
                   </div>
-                </td>
+                  </td>
               </tr>
-            `);
-            return;
+              `);
+              return;
           }
 
           publications.forEach(pub => {
-            const fileBadge = pub.fichier 
-              ? `<span class="badge badge-info"><i class="fas fa-file me-1"></i>Has file</span>`
-              : `<span class="badge badge-secondary">No file</span>`;
+              const fileBadge = pub.fichier 
+                  ? `<span class="badge badge-info"><i class="fas fa-file me-1"></i>Has file</span>`
+                  : `<span class="badge badge-secondary">No file</span>`;
 
-            const contentPreview = pub.texte.length > 100 
-              ? pub.texte.substring(0, 100) + '...' 
-              : pub.texte;
+              const contentPreview = pub.texte.length > 100 
+                  ? pub.texte.substring(0, 100) + '...' 
+                  : pub.texte;
 
-            const row = `
+              const row = `
               <tr>
-                <td>${pub.id_publication}</td>
-                <td>
+                  <td>${pub.id_publication}</td>
+                  <td>
                   <div class="d-flex align-items-center">
-                    <div class="avatar-sm mr-3">
+                      <div class="avatar-sm mr-3">
                       <div class="avatar-title rounded-circle bg-primary text-white" style="width: 35px; height: 35px; line-height: 35px;">
-                        ${pub.nom ? pub.nom.charAt(0).toUpperCase() : 'U'}
+                          ${pub.nom ? pub.nom.charAt(0).toUpperCase() : 'U'}
                       </div>
-                    </div>
-                    <div>
+                      </div>
+                      <div>
                       <div class="font-weight-bold">${escapeHtml(pub.nom || 'Unknown User')}</div>
                       <small class="text-muted">${escapeHtml(pub.email || '')}</small>
-                    </div>
+                      </div>
                   </div>
-                </td>
-                <td>
+                  </td>
+                  <td>
                   <div class="publication-content-preview">
-                    ${escapeHtml(contentPreview)}
+                      ${escapeHtml(contentPreview)}
                   </div>
-                </td>
-                <td>
+                  </td>
+                  <td>
                   <small class="text-muted">${new Date(pub.date_publication).toLocaleDateString()}</small>
                   <br>
                   <small class="text-muted">${new Date(pub.date_publication).toLocaleTimeString()}</small>
-                </td>
-                <td>${fileBadge}</td>
-                <td class="text-center">
+                  </td>
+                  <td>${fileBadge}</td>
+                  <td class="text-center">
                   <div class="action-buttons">
-                    <button class="btn btn-sm btn-info btn-action btn-view" 
-                            data-id="${pub.id_publication}"
-                            data-content="${escapeHtml(pub.texte)}"
-                            data-author="${escapeHtml(pub.nom)}"
-                            data-date="${pub.date_publication}"
-                            data-file="${pub.fichier || ''}"
-                            title="View Details">
+                      <button class="btn btn-sm btn-info btn-action btn-view" 
+                              data-id="${pub.id_publication}"
+                              data-content="${escapeHtml(pub.texte)}"
+                              data-author="${escapeHtml(pub.nom)}"
+                              data-date="${pub.date_publication}"
+                              data-file="${pub.fichier || ''}"
+                              title="View Details">
                       <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger btn-action btn-delete-pub" 
-                            data-id="${pub.id_publication}"
-                            data-author="${escapeHtml(pub.nom)}"
-                            title="Delete">
+                      </button>
+                      <button class="btn btn-sm btn-danger btn-action btn-delete-pub" 
+                              data-id="${pub.id_publication}"
+                              data-author="${escapeHtml(pub.nom)}"
+                              title="Delete">
                       <i class="fas fa-trash"></i>
-                    </button>
-                    <!-- NOUVEAU BOUTON COMMENTS POUR LES PUBLICATIONS UTILISATEURS -->
-                    <a href="addcommentaire.php?id_utilisateur=<?= $idUser ?>&id_publication=${pub.id_publication}" 
-                       class="btn btn-sm btn-success btn-action" 
-                       title="Comments">
+                      </button>
+                      <a href="addcommentaire.php?id_utilisateur=<?= $idUser ?>&id_publication=${pub.id_publication}" 
+                          class="btn btn-sm btn-success btn-action" 
+                          title="Comments">
                       <i class="fas fa-comments"></i>
-                    </a>
+                      </a>
                   </div>
-                </td>
+                  </td>
               </tr>
-            `;
-            tbody.append(row);
+              `;
+              tbody.append(row);
           });
 
           // Attach event listeners
           $('.btn-view').on('click', function() {
-            const id = $(this).data('id');
-            const content = $(this).data('content');
-            const author = $(this).data('author');
-            const date = $(this).data('date');
-            const file = $(this).data('file');
-            viewPublicationDetails(id, content, author, date, file);
+              const id = $(this).data('id');
+              const content = $(this).data('content');
+              const author = $(this).data('author');
+              const date = $(this).data('date');
+              const file = $(this).data('file');
+              viewPublicationDetails(id, content, author, date, file);
           });
 
           $('.btn-delete-pub').on('click', function() {
-            const id = $(this).data('id');
-            const author = $(this).data('author');
-            deleteUserPublication(id, author);
+              const id = $(this).data('id');
+              const author = $(this).data('author');
+              deleteUserPublication(id, author);
           });
-        }
+      }
 
-        function filterPubUserPublications(searchTerm) {
+      function filterPubUserPublications(searchTerm) {
           if (!searchTerm) {
-            displayPubUserPublications(allPubUserPublications);
-            return;
+              displayPubUserPublications(allPubUserPublications);
+              return;
           }
 
           const filtered = allPubUserPublications.filter(pub => 
-            pub.texte.toLowerCase().includes(searchTerm) ||
-            (pub.nom && pub.nom.toLowerCase().includes(searchTerm)) ||
-            (pub.email && pub.email.toLowerCase().includes(searchTerm))
+              pub.texte.toLowerCase().includes(searchTerm) ||
+              (pub.nom && pub.nom.toLowerCase().includes(searchTerm)) ||
+              (pub.email && pub.email.toLowerCase().includes(searchTerm))
           );
           
           displayPubUserPublications(filtered);
-        }
+      }
 
-        function updatePubUserPagination(total, currentPage, totalPages) {
+      function updatePubUserPagination(total, currentPage, totalPages) {
           const pagination = $('#pubuser-pagination');
           pagination.empty();
 
@@ -1494,110 +1651,107 @@ $publications = $pubController->listAdminPublications($limit, $offset);
 
           // Previous button
           if (currentPage > 1) {
-            pagination.append(`
+              pagination.append(`
               <li class="page-item">
-                <a class="page-link" href="#" data-page="${currentPage - 1}">
+                  <a class="page-link" href="#" data-page="${currentPage - 1}">
                   <i class="fas fa-chevron-left"></i>
-                </a>
+                  </a>
               </li>
-            `);
+              `);
           }
 
           // Page numbers
           for (let i = 1; i <= totalPages; i++) {
-            const active = i === currentPage ? 'active' : '';
-            pagination.append(`
+              const active = i === currentPage ? 'active' : '';
+              pagination.append(`
               <li class="page-item ${active}">
-                <a class="page-link" href="#" data-page="${i}">${i}</a>
+                  <a class="page-link" href="#" data-page="${i}">${i}</a>
               </li>
-            `);
+              `);
           }
 
           // Next button
           if (currentPage < totalPages) {
-            pagination.append(`
+              pagination.append(`
               <li class="page-item">
-                <a class="page-link" href="#" data-page="${currentPage + 1}">
+                  <a class="page-link" href="#" data-page="${currentPage + 1}">
                   <i class="fas fa-chevron-right"></i>
-                </a>
+                  </a>
               </li>
-            `);
+              `);
           }
 
           // Pagination event listeners
           pagination.find('.page-link').on('click', function(e) {
-            e.preventDefault();
-            const page = $(this).data('page');
-            loadPubUserPublications(page);
+              e.preventDefault();
+              const page = $(this).data('page');
+              loadPubUserPublications(page);
           });
-        }
+      }
 
-        function viewPublicationDetails(id, content, author, date, file) {
+      function viewPublicationDetails(id, content, author, date, file) {
           console.log('Loading details for publication:', id);
           
-          // Charger les commentaires et statistiques via AJAX
           $.ajax({
-            url: '../../controller/CommentaireController.php',
-            type: 'GET',
-            data: { 
-              action: 'listCommentairesByPublication',
-              id_publication: id
-            },
-            dataType: 'json',
-            success: function(commentsResponse) {
-              console.log('Comments loaded:', commentsResponse);
-              
-              // Charger les statistiques de réactions (TOTAUX seulement)
-              $.ajax({
-                url: '../../controller/ReactionController.php',
-                type: 'GET',
-                data: {
-                  action: 'getReactionsSummary',
+              url: '../../controller/CommentaireController.php',
+              type: 'GET',
+              data: { 
+                  action: 'listCommentairesByPublication',
                   id_publication: id
-                },
-                dataType: 'json',
-                success: function(statsResponse) {
-                  console.log('Stats loaded:', statsResponse);
+              },
+              dataType: 'json',
+              success: function(commentsResponse) {
+                  console.log('Comments loaded:', commentsResponse);
                   
-                  // Charger la réaction de l'admin
                   $.ajax({
-                    url: '../../controller/ReactionController.php',
-                    type: 'GET',
-                    data: {
-                      action: 'getUserReaction',
-                      id_publication: id,
-                      id_utilisateur: <?= $idUser ?>
-                    },
-                    dataType: 'json',
-                    success: function(userReactionResponse) {
-                      console.log('User reaction loaded:', userReactionResponse);
-                      showPublicationDetailsModal(id, content, author, date, file, 
-                        commentsResponse, statsResponse, userReactionResponse);
-                    },
-                    error: function(xhr, status, error) {
-                      console.error('Error loading user reaction:', error);
-                      showPublicationDetailsModal(id, content, author, date, file, 
-                        commentsResponse, statsResponse, null);
-                    }
+                      url: '../../controller/ReactionController.php',
+                      type: 'GET',
+                      data: {
+                          action: 'getReactionsSummary',
+                          id_publication: id
+                      },
+                      dataType: 'json',
+                      success: function(statsResponse) {
+                          console.log('Stats loaded:', statsResponse);
+                          
+                          $.ajax({
+                              url: '../../controller/ReactionController.php',
+                              type: 'GET',
+                              data: {
+                                  action: 'getUserReaction',
+                                  id_publication: id,
+                                  id_utilisateur: <?= $idUser ?>
+                              },
+                              dataType: 'json',
+                              success: function(userReactionResponse) {
+                                  console.log('User reaction loaded:', userReactionResponse);
+                                  showPublicationDetailsModal(id, content, author, date, file, 
+                                      commentsResponse, statsResponse, userReactionResponse);
+                              },
+                              error: function(xhr, status, error) {
+                                  console.error('Error loading user reaction:', error);
+                                  showPublicationDetailsModal(id, content, author, date, file, 
+                                      commentsResponse, statsResponse, null);
+                              }
+                          });
+                      },
+                      error: function(xhr, status, error) {
+                          console.error('Error loading stats:', error);
+                          showPublicationDetailsModal(id, content, author, date, file, 
+                              commentsResponse, null, null);
+                      }
                   });
-                },
-                error: function(xhr, status, error) {
-                  console.error('Error loading stats:', error);
+              },
+              error: function(xhr, status, error) {
+                  console.error('Error loading comments:', error);
                   showPublicationDetailsModal(id, content, author, date, file, 
-                    commentsResponse, null, null);
-                }
-              });
-            },
-            error: function(xhr, status, error) {
-              console.error('Error loading comments:', error);
-              showPublicationDetailsModal(id, content, author, date, file, 
-                null, null, null);
-            }
+                      null, null, null);
+              }
           });
-        }
+      }
 
-        function showPublicationDetailsModal(id, content, author, date, file, 
-                                           commentsResponse, statsResponse, userReactionResponse) {
+      function showPublicationDetailsModal(id, content, author, date, file, 
+                                          commentsResponse, statsResponse, userReactionResponse) {
           
           let commentsHtml = '';
           let reactionsTotalsHtml = '';
@@ -1605,55 +1759,55 @@ $publications = $pubController->listAdminPublications($limit, $offset);
 
           // Afficher les commentaires
           if (commentsResponse && commentsResponse.length > 0) {
-            commentsResponse.forEach(comment => {
-              commentsHtml += `
-              <div class="comment-item">
-                <div class="comment-header-modal">
-                  <div class="d-flex align-items-center">
-                    <div class="comment-avatar-sm me-2">
-                      <i class="fas fa-user"></i>
-                    </div>
-                    <div>
-                      <strong class="comment-author">${escapeHtml(comment.nom || 'User ' + comment.id_utilisateur)}</strong>
-                      <small class="text-muted ms-2">${new Date(comment.date_commentaire).toLocaleString()}</small>
-                    </div>
+              commentsResponse.forEach(comment => {
+                  commentsHtml += `
+                  <div class="comment-item">
+                      <div class="comment-header-modal">
+                      <div class="d-flex align-items-center">
+                          <div class="comment-avatar-sm me-2">
+                          <i class="fas fa-user"></i>
+                          </div>
+                          <div>
+                          <strong class="comment-author">${escapeHtml(comment.nom || 'User ' + comment.id_utilisateur)}</strong>
+                          <small class="text-muted ms-2">${new Date(comment.date_commentaire).toLocaleString()}</small>
+                          </div>
+                      </div>
+                      </div>
+                      <div class="comment-content">
+                      ${escapeHtml(comment.texte).replace(/\n/g, '<br>')}
+                      </div>
                   </div>
-                </div>
-                <div class="comment-content">
-                  ${escapeHtml(comment.texte).replace(/\n/g, '<br>')}
-                </div>
+                  `;
+              });
+          } else {
+              commentsHtml = `
+              <div class="text-center text-muted py-3">
+                  <i class="fas fa-comment-slash fa-2x mb-2"></i>
+                  <p>No comments yet</p>
               </div>
               `;
-            });
-          } else {
-            commentsHtml = `
-            <div class="text-center text-muted py-3">
-              <i class="fas fa-comment-slash fa-2x mb-2"></i>
-              <p>No comments yet</p>
-            </div>
-            `;
           }
 
-          // Afficher les TOTAUX de réactions (depuis le front)
+          // Afficher les TOTAUX de réactions
           const likesCount = statsResponse ? (statsResponse.like || 0) : 0;
           const dislikesCount = statsResponse ? (statsResponse.dislike || 0) : 0;
           
           reactionsTotalsHtml = `
           <div class="reactions-totals">
-            <div class="reaction-total-card likes">
+              <div class="reaction-total-card likes">
               <div class="reaction-total-icon likes">
-                <i class="fas fa-thumbs-up"></i>
+                  <i class="fas fa-thumbs-up"></i>
               </div>
               <div class="reaction-total-count">${likesCount}</div>
               <div class="reaction-total-label">LIKES</div>
-            </div>
-            <div class="reaction-total-card dislikes">
+              </div>
+              <div class="reaction-total-card dislikes">
               <div class="reaction-total-icon dislikes">
-                <i class="fas fa-thumbs-down"></i>
+                  <i class="fas fa-thumbs-down"></i>
               </div>
               <div class="reaction-total-count">${dislikesCount}</div>
               <div class="reaction-total-label">DISLIKES</div>
-            </div>
+              </div>
           </div>
           `;
 
@@ -1661,104 +1815,104 @@ $publications = $pubController->listAdminPublications($limit, $offset);
           const userReaction = userReactionResponse ? userReactionResponse.type_reaction : null;
           adminReactionHtml = `
           <div class="admin-reactions-section">
-            <h6 class="text-muted mb-2">
+              <h6 class="text-muted mb-2">
               <i class="fas fa-user-shield me-2"></i>Your Reaction (Admin)
-            </h6>
-            <div class="admin-reaction-buttons">
+              </h6>
+              <div class="admin-reaction-buttons">
               <button class="admin-reaction-btn like ${userReaction === 'like' ? 'active' : ''}" 
                       data-publication-id="${id}" data-reaction-type="like">
-                <i class="fas fa-thumbs-up me-1"></i>Like
+                  <i class="fas fa-thumbs-up me-1"></i>Like
               </button>
               <button class="admin-reaction-btn dislike ${userReaction === 'dislike' ? 'active' : ''}" 
                       data-publication-id="${id}" data-reaction-type="dislike">
-                <i class="fas fa-thumbs-down me-1"></i>Dislike
+                  <i class="fas fa-thumbs-down me-1"></i>Dislike
               </button>
               ${userReaction ? `
               <button class="admin-reaction-btn remove" data-publication-id="${id}">
-                <i class="fas fa-times me-1"></i>Remove Reaction
+                  <i class="fas fa-times me-1"></i>Remove Reaction
               </button>
               ` : ''}
-            </div>
+              </div>
           </div>
           `;
 
           const modalContent = `
           <div class="publication-details">
-            <div class="publication-header mb-3">
+              <div class="publication-header mb-3">
               <div class="d-flex align-items-center">
-                <div class="avatar-lg mr-3">
+                  <div class="avatar-lg mr-3">
                   <div class="avatar-title rounded-circle bg-primary text-white" style="width: 60px; height: 60px; line-height: 60px; font-size: 24px;">
-                    ${author ? author.charAt(0).toUpperCase() : 'U'}
+                      ${author ? author.charAt(0).toUpperCase() : 'U'}
                   </div>
-                </div>
-                <div>
+                  </div>
+                  <div>
                   <h5 class="mb-1">${escapeHtml(author || 'Unknown User')}</h5>
                   <p class="text-muted mb-0">${new Date(date).toLocaleString()}</p>
-                </div>
+                  </div>
               </div>
-            </div>
-            
-            <div class="publication-content mb-3">
+              </div>
+              
+              <div class="publication-content mb-3">
               <h6 class="text-muted mb-2">Content:</h6>
               <div class="content-box">
-                ${escapeHtml(content).replace(/\n/g, '<br>')}
+                  ${escapeHtml(content).replace(/\n/g, '<br>')}
               </div>
-            </div>
-            
-            ${file ? `
-            <div class="publication-file mb-3">
+              </div>
+              
+              ${file ? `
+              <div class="publication-file mb-3">
               <h6 class="text-muted mb-2">Attached File:</h6>
               <a href="../../../${file}" target="_blank" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-file-download me-2"></i>Download File
+                  <i class="fas fa-file-download me-2"></i>Download File
               </a>
-            </div>
-            ` : ''}
+              </div>
+              ` : ''}
 
-            ${adminReactionHtml}
+              ${adminReactionHtml}
 
-            <!-- Reactions Section (TOTAUX seulement) -->
-            <div class="reactions-section">
+              <!-- Reactions Section (TOTAUX seulement) -->
+              <div class="reactions-section">
               <h6 class="text-muted mb-2">
-                <i class="fas fa-heart me-2"></i>All Reactions from Users
+                  <i class="fas fa-heart me-2"></i>All Reactions from Users
               </h6>
               ${reactionsTotalsHtml}
-            </div>
+              </div>
 
-            <!-- Comments Section -->
-            <div class="comments-section">
+              <!-- Comments Section -->
+              <div class="comments-section">
               <h6 class="text-muted mb-2">
-                <i class="fas fa-comments me-2"></i>Comments (${commentsResponse ? commentsResponse.length : 0})
+                  <i class="fas fa-comments me-2"></i>Comments (${commentsResponse ? commentsResponse.length : 0})
               </h6>
               <div class="comments-list">
-                ${commentsHtml}
+                  ${commentsHtml}
               </div>
-            </div>
+              </div>
           </div>
           `;
 
           // Create and show modal
           const modalId = 'publication-details-modal';
           if ($(`#${modalId}`).length) {
-            $(`#${modalId}`).remove();
+              $(`#${modalId}`).remove();
           }
 
           const modal = $(`
-            <div class="modal fade" id="${modalId}" tabindex="-1">
+              <div class="modal fade" id="${modalId}" tabindex="-1">
               <div class="modal-dialog modal-lg">
-                <div class="modal-content">
+                  <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title">Publication Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      <h5 class="modal-title">Publication Details</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                   </div>
                   <div class="modal-body">
-                    ${modalContent}
+                      ${modalContent}
                   </div>
                   <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                   </div>
-                </div>
+                  </div>
               </div>
-            </div>
+              </div>
           `);
 
           $('body').append(modal);
@@ -1766,144 +1920,139 @@ $publications = $pubController->listAdminPublications($limit, $offset);
 
           // Attacher les événements pour les réactions admin
           attachAdminReactionEvents(id);
-        }
+      }
 
-        function attachAdminReactionEvents(publicationId) {
+      function attachAdminReactionEvents(publicationId) {
           $('.admin-reaction-btn').off('click').on('click', function() {
-            const reactionType = $(this).data('reaction-type');
-            const isRemove = $(this).hasClass('remove');
-            
-            if (isRemove) {
-              removeAdminReaction(publicationId);
-            } else {
-              addAdminReaction(publicationId, reactionType);
-            }
-          });
-        }
-
-        function addAdminReaction(publicationId, reactionType) {
-          $.ajax({
-            url: 'addreaction.php',
-            type: 'POST',
-            data: {
-              id_publication: publicationId,
-              id_utilisateur: <?= $idUser ?>,
-              type: reactionType
-            },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                showSuccess('Reaction added successfully!');
-                // Recharger la modal avec les nouvelles données
-                $('.btn-close').click();
-                // Trouver et re-cliquer sur le bouton view pour rafraîchir
-                setTimeout(() => {
-                  $(`.btn-view[data-id="${publicationId}"]`).click();
-                }, 500);
+              const reactionType = $(this).data('reaction-type');
+              const isRemove = $(this).hasClass('remove');
+              
+              if (isRemove) {
+                  removeAdminReaction(publicationId);
               } else {
-                showError('Error: ' + (response.message || 'Failed to add reaction'));
+                  addAdminReaction(publicationId, reactionType);
               }
-            },
-            error: function(xhr, status, error) {
-              showError('Error adding reaction: ' + error);
-            }
           });
-        }
+      }
 
-        function removeAdminReaction(publicationId) {
+      function addAdminReaction(publicationId, reactionType) {
           $.ajax({
-            url: '../../controller/ReactionController.php',
-            type: 'POST',
-            data: {
-              action: 'removeReaction',
-              id_publication: publicationId,
-              id_utilisateur: <?= $idUser ?>
-            },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                showSuccess('Reaction removed successfully!');
-                // Recharger la modal avec les nouvelles données
-                $('.btn-close').click();
-                // Trouver et re-cliquer sur le bouton view pour rafraîchir
-                setTimeout(() => {
-                  $(`.btn-view[data-id="${publicationId}"]`).click();
-                }, 500);
-              } else {
-                showError('Error: ' + (response.message || 'Failed to remove reaction'));
+              url: 'addreaction.php',
+              type: 'POST',
+              data: {
+                  id_publication: publicationId,
+                  id_utilisateur: <?= $idUser ?>,
+                  type: reactionType
+              },
+              dataType: 'json',
+              success: function(response) {
+                  if (response.success) {
+                      showSuccess('Reaction added successfully!');
+                      $('.btn-close').click();
+                      setTimeout(() => {
+                          $(`.btn-view[data-id="${publicationId}"]`).click();
+                      }, 500);
+                  } else {
+                      showError('Error: ' + (response.message || 'Failed to add reaction'));
+                  }
+              },
+              error: function(xhr, status, error) {
+                  showError('Error adding reaction: ' + error);
               }
-            },
-            error: function(xhr, status, error) {
-              showError('Error removing reaction: ' + error);
-            }
           });
-        }
+      }
 
-        function deleteUserPublication(id, author) {
+      function removeAdminReaction(publicationId) {
+          $.ajax({
+              url: '../../controller/ReactionController.php',
+              type: 'POST',
+              data: {
+                  action: 'removeReaction',
+                  id_publication: publicationId,
+                  id_utilisateur: <?= $idUser ?>
+              },
+              dataType: 'json',
+              success: function(response) {
+                  if (response.success) {
+                      showSuccess('Reaction removed successfully!');
+                      $('.btn-close').click();
+                      setTimeout(() => {
+                          $(`.btn-view[data-id="${publicationId}"]`).click();
+                      }, 500);
+                  } else {
+                      showError('Error: ' + (response.message || 'Failed to remove reaction'));
+                  }
+              },
+              error: function(xhr, status, error) {
+                  showError('Error removing reaction: ' + error);
+              }
+          });
+      }
+
+      function deleteUserPublication(id, author) {
           if (!confirm(`Are you sure you want to delete publication from "${author}"? This action cannot be undone.`)) {
-            return;
+              return;
           }
 
           $.ajax({
-            url: '../../controller/PublicationController.php',
-            type: 'POST',
-            data: { 
-              action: 'deleteUserPublication',
-              id: id
-            },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                showSuccess('Publication deleted successfully!');
-                loadPubUserPublications();
-              } else {
-                showError(response.message || 'Failed to delete publication');
+              url: '../../controller/PublicationController.php',
+              type: 'POST',
+              data: { 
+                  action: 'deleteUserPublication',
+                  id: id
+              },
+              dataType: 'json',
+              success: function(response) {
+                  if (response.success) {
+                      showSuccess('Publication deleted successfully!');
+                      loadPubUserPublications();
+                  } else {
+                      showError(response.message || 'Failed to delete publication');
+                  }
+              },
+              error: function(xhr, status, error) {
+                  showError('Error deleting publication: ' + error);
               }
-            },
-            error: function(xhr, status, error) {
-              showError('Error deleting publication: ' + error);
-            }
           });
-        }
+      }
 
-        function escapeHtml(text) {
+      function escapeHtml(text) {
           const s = String(text || '');
           const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#039;'
           };
           return s.replace(/[&<>\"']/g, m => map[m]);
-        }
+      }
 
-        function showSuccess(message) {
+      function showSuccess(message) {
           $.notify({
-            message: message
+              message: message
           }, {
-            type: 'success',
-            placement: {
-              from: 'top',
-              align: 'right'
-            },
-            delay: 3000
+              type: 'success',
+              placement: {
+                  from: 'top',
+                  align: 'right'
+              },
+              delay: 3000
           });
-        }
+      }
 
-        function showError(message) {
+      function showError(message) {
           $.notify({
-            message: message
+              message: message
           }, {
-            type: 'danger',
-            placement: {
-              from: 'top',
-              align: 'right'
-            },
-            delay: 5000
+              type: 'danger',
+              placement: {
+                  from: 'top',
+                  align: 'right'
+              },
+              delay: 5000
           });
-        }
-      });
+      }
     </script>
   </body>
 </html>

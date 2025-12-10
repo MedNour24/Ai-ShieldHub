@@ -30,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
 }
 
 // ---------- RÉCUPÉRATION DES COMMENTAIRES ----------
-$commentaires = $commentController->listCommentairesByPublication($idPublication);
+// CORRECTION : Utiliser getCommentairesByPublication() au lieu de listCommentairesByPublication()
+$commentaires = $commentController->getCommentairesByPublication($idPublication);
 ?>
 
 <!DOCTYPE html>
@@ -152,6 +153,7 @@ $commentaires = $commentController->listCommentairesByPublication($idPublication
       }
       .form-group {
         margin-bottom: 20px;
+        position: relative;
       }
       .form-group label {
         font-weight: 600;
@@ -173,11 +175,22 @@ $commentaires = $commentController->listCommentairesByPublication($idPublication
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(21, 114, 232, 0.3);
       }
+      .btn-comment:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
       .char-counter {
         text-align: right;
         color: #6c757d;
         font-size: 12px;
         margin-top: 5px;
+      }
+      .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
       }
       .publication-preview {
         background: #f8f9fa;
@@ -505,11 +518,11 @@ $commentaires = $commentController->listCommentairesByPublication($idPublication
                         <div class="form-group">
                           <label for="commentContent"><i class="fas fa-edit me-2"></i>Your Comment</label>
                           <textarea name="contenu" id="commentContent" class="form-control" rows="4" placeholder="Write your comment here..."></textarea>
-                          <small class="form-text text-muted">Maximum 500 characters allowed</small>
-                          <div class="char-counter">0/500 characters</div>
+                          <div class="char-counter" id="charCounter">0/500 characters</div>
+                          <div class="error-message" id="commentError"></div>
                         </div>
                         
-                        <button type="submit" class="btn-comment">
+                        <button type="submit" class="btn-comment" id="submitButton">
                           <i class="fas fa-paper-plane me-2"></i>Post Comment
                         </button>
                       </form>
@@ -547,16 +560,16 @@ $commentaires = $commentController->listCommentairesByPublication($idPublication
                             </div>
                             
                             <div class="comment-content">
-                              <?= nl2br(htmlspecialchars($commentaire['texte'])) ?>
+                              <?= nl2br(htmlspecialchars($commentaire['contenu'] ?? $commentaire['texte'])) ?>
                             </div>
                             
                             <!-- Afficher les boutons Edit/Delete pour tous les commentaires (admin peut tout modifier/supprimer) -->
                             <div class="user-comment-actions">
-                              <a href="editcommentaire.php?id_commentaire=<?= $commentaire['id_commentaire'] ?>&id_utilisateur=<?= $idUser ?>&id_publication=<?= $idPublication ?>" 
+                              <a href="editcommentaire.php?id_commentaire=<?= $commentaire['id'] ?>&id_utilisateur=<?= $idUser ?>&id_publication=<?= $idPublication ?>" 
                                  class="btn-edit-comment">
                                 <i class="fas fa-edit me-1"></i>Edit
                               </a>
-                              <a href="deletecommentaire.php?id_commentaire=<?= $commentaire['id_commentaire'] ?>&id_utilisateur=<?= $idUser ?>&id_publication=<?= $idPublication ?>" 
+                              <a href="deletecommentaire.php?id_commentaire=<?= $commentaire['id'] ?>&id_utilisateur=<?= $idUser ?>&id_publication=<?= $idPublication ?>" 
                                  class="btn-delete-comment"
                                  onclick="return confirm('Are you sure you want to delete this comment?')">
                                 <i class="fas fa-trash me-1"></i>Delete
@@ -590,65 +603,116 @@ $commentaires = $commentController->listCommentairesByPublication($idPublication
     <script src="assets/js/kaiadmin.min.js"></script>
 
     <script>
-      $(document).ready(function() {
-        // Character counter for comment textarea
-        const commentTextarea = document.getElementById('commentContent');
-        const charCounter = document.querySelector('.char-counter');
+      // Validation du formulaire de commentaire
+      class CommentValidator {
+          constructor() {
+              this.commentTextarea = document.getElementById('commentContent');
+              this.charCounter = document.getElementById('charCounter');
+              this.commentError = document.getElementById('commentError');
+              this.submitButton = document.getElementById('submitButton');
+              this.maxChars = 500;
+              
+              this.init();
+          }
 
-        commentTextarea.addEventListener('input', function() {
-          const charCount = this.value.length;
-          const maxChars = 500;
-          
-          if (charCount > maxChars) {
-            this.value = this.value.substring(0, maxChars);
+          init() {
+              // Événements de validation
+              this.commentTextarea.addEventListener('input', this.updateCharCounter.bind(this));
+              this.commentTextarea.addEventListener('blur', this.validateForm.bind(this));
+              
+              // Validation à la soumission
+              document.getElementById('formComment').addEventListener('submit', this.handleSubmit.bind(this));
+              
+              // Validation initiale
+              this.updateCharCounter();
+              this.validateForm();
           }
-          
-          charCounter.textContent = `${Math.min(charCount, maxChars)}/${maxChars} characters`;
-          
-          if (charCount > maxChars * 0.8) {
-            charCounter.style.color = '#dc3545';
-          } else {
-            charCounter.style.color = '#6c757d';
-          }
-        });
 
-        // Form validation avec JavaScript
-        const form = document.getElementById('formComment');
-        form.addEventListener('submit', function(e){
-          const content = document.getElementById('commentContent').value.trim();
-          
-          if(content === ''){ 
-            alert('Le commentaire ne peut pas être vide !'); 
-            e.preventDefault(); 
-            return; 
+          updateCharCounter() {
+              const charCount = this.commentTextarea.value.length;
+              
+              // Mettre à jour le compteur
+              this.charCounter.textContent = `${charCount}/${this.maxChars} characters`;
+              
+              // Changer la couleur selon le nombre de caractères
+              if (charCount > this.maxChars * 0.8) {
+                  this.charCounter.style.color = '#dc3545';
+              } else {
+                  this.charCounter.style.color = '#6c757d';
+              }
+              
+              // Limiter automatiquement à 500 caractères
+              if (charCount > this.maxChars) {
+                  this.commentTextarea.value = this.commentTextarea.value.substring(0, this.maxChars);
+                  this.updateCharCounter();
+              }
+              
+              // Valider en temps réel
+              this.validateForm();
           }
-          if(content.length > 500){ 
-            alert('Le commentaire ne peut pas dépasser 500 caractères !'); 
-            e.preventDefault(); 
-            return; 
-          }
-        });
 
-        // Auto-resize textarea
-        commentTextarea.addEventListener('input', function() {
+          validateForm() {
+              const content = this.commentTextarea.value.trim();
+              let isValid = true;
+              
+              // Réinitialiser les erreurs
+              this.commentError.style.display = 'none';
+              this.commentError.textContent = '';
+              this.commentTextarea.style.borderColor = '#ced4da';
+              
+              // Validation du contenu vide
+              if (content === '') {
+                  this.commentError.textContent = 'Please enter your comment before posting.';
+                  this.commentError.style.display = 'block';
+                  this.commentTextarea.style.borderColor = '#dc3545';
+                  isValid = false;
+              }
+              
+              // Validation de la longueur
+              if (content.length > this.maxChars) {
+                  this.commentError.textContent = `Comment cannot exceed ${this.maxChars} characters.`;
+                  this.commentError.style.display = 'block';
+                  this.commentTextarea.style.borderColor = '#dc3545';
+                  isValid = false;
+              }
+              
+              // Activer/désactiver le bouton de soumission
+              this.submitButton.disabled = !isValid;
+              
+              return isValid;
+          }
+
+          handleSubmit(event) {
+              if (!this.validateForm()) {
+                  event.preventDefault();
+                  this.commentTextarea.focus();
+                  return;
+              }
+              
+              // Empêcher la double soumission
+              this.submitButton.disabled = true;
+              this.submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Posting...';
+          }
+      }
+
+      // Auto-resize textarea
+      const commentTextarea = document.getElementById('commentContent');
+      commentTextarea.addEventListener('input', function() {
           this.style.height = 'auto';
           this.style.height = (this.scrollHeight) + 'px';
-        });
+      });
 
-        // Initialize character counter
-        commentTextarea.dispatchEvent(new Event('input'));
-
-        // Confirmation pour la suppression
-        document.querySelectorAll('.btn-delete-comment').forEach(button => {
+      // Confirmation pour la suppression
+      document.querySelectorAll('.btn-delete-comment').forEach(button => {
           button.addEventListener('click', function(e) {
-            if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
-              e.preventDefault();
-            }
+              if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+                  e.preventDefault();
+              }
           });
-        });
+      });
 
-        // Page Navigation
-        $('.nav-link[data-page]').on('click', function(e) {
+      // Page Navigation
+      $('.nav-link[data-page]').on('click', function(e) {
           e.preventDefault();
           const page = $(this).data('page');
           
@@ -659,7 +723,11 @@ $commentaires = $commentController->listCommentairesByPublication($idPublication
           // Show corresponding page content
           $('.page-content').removeClass('active');
           $(`#${page}-page`).addClass('active');
-        });
+      });
+
+      // Initialiser la validation au chargement
+      document.addEventListener('DOMContentLoaded', function() {
+          new CommentValidator();
       });
     </script>
   </body>

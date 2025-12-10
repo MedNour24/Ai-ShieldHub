@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../../Controller/CommentaireControllerfront.php';
+require_once __DIR__ . '/../../Controller/CommentaireController.php';
 require_once __DIR__ . '/../../Model/Commentaire.php';
 
 // Récupérer les paramètres
@@ -12,7 +12,8 @@ if ($idCommentaire <= 0) die("ID commentaire non spécifié !");
 if ($idUser <= 0) die("ID utilisateur non spécifié !");
 if ($idPublication <= 0) die("ID publication non spécifié !");
 
-$commentController = new CommentaireControllerfront();
+// MODIFIÉ : Utiliser le contrôleur unifié
+$commentController = new CommentaireController();
 
 // Récupérer le commentaire à supprimer pour vérification
 $commentaire = $commentController->getCommentaireById($idCommentaire);
@@ -21,13 +22,14 @@ if (!$commentaire) {
 }
 
 // Vérifier que l'utilisateur est bien le propriétaire du commentaire
+// MODIFIÉ : Utiliser 'id_utilisateur' au lieu de 'idUser' car c'est le nom de colonne dans la base
 if ($commentaire['id_utilisateur'] != $idUser) {
     die("Vous n'êtes pas autorisé à supprimer ce commentaire !");
 }
 
 // ---------- GESTION DE LA SUPPRESSION ----------
 if (isset($_GET['confirm']) && $_GET['confirm'] === 'yes') {
-    // Supprimer le commentaire
+    // MODIFIÉ : Utiliser la méthode deleteCommentaire du contrôleur unifié
     $commentController->deleteCommentaire($idCommentaire);
     
     // Rediriger vers la page des commentaires
