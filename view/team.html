@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Management - Tournament</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--darker);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--light);
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 50%, #1e1b4b 100%);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(-50px, -50px);
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            margin-bottom: 40px;
+            text-align: center;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--light);
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        .tournament-info-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .tournament-info-banner h3 {
+            color: white;
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .tournament-info-banner .badge {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 14px 35px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--light);
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--light);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group label .required {
+            color: var(--accent);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .form-group input:disabled,
+        .form-group select:disabled {
+            background: rgba(255, 255, 255, 0.03);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(226, 232, 240, 0.5);
+        }
+
+        .form-group select {
+            color: white;
+        }
+
+        .form-group select option {
+            background: var(--dark);
+            color: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group .error {
+            border-color: var(--accent) !important;
+            background: rgba(236, 72, 153, 0.1) !important;
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: errorSlide 0.3s ease;
+        }
+
+        @keyframes errorSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: var(--primary);
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            font-weight: 700;
+        }
+
+        .members-container {
+            margin-top: 20px;
+        }
+
+        .member-item {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            position: relative;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .member-item:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+        }
+
+        .member-item .member-number {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .remove-member {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, var(--accent), #dc2626);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-member:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .add-member-btn {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .add-member-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .add-member-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .alert.error {
+            background: rgba(236, 72, 153, 0.2);
+            color: var(--accent);
+            border-left: 4px solid var(--accent);
+        }
+
+        .teams-list {
+            margin-top: 30px;
+        }
+
+        .team-card {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .team-card:hover {
+            background: rgba(99, 102, 241, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .team-name {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00f5ff, #3a86ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .team-tag {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .team-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .team-info-item {
+            font-size: 14px;
+            color: var(--light);
+        }
+
+        .team-info-item strong {
+            color: var(--primary);
+        }
+
+        .badge-full {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-open {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .join-btn {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .join-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .join-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            animation: modalSlideDown 0.4s ease;
+        }
+
+        @keyframes modalSlideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal-btn.secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .modal-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .team-info {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .tournament-info-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="tournoi.html" class="back-link">
+            ← Back to Tournaments
+        </a>
+
+        <div class="header">
+            <h1>🏆 Team Management</h1>
+            <p>Create your team or join an existing team</p>
+        </div>
+
+        <!-- Tournament Info Banner (shown when coming from specific tournament) -->
+        <div id="tournamentBanner" class="tournament-info-banner" style="display: none;">
+            <h3>📌 <span id="tournamentName">Selected Tournament</span></h3>
+            <span class="badge" id="tournamentLevel">Level</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('create')">Create a Team</button>
+            <button class="tab-btn" onclick="switchTab('join')">Join a Team</button>
+        </div>
+
+        <!-- TAB: Create a Team -->
+        <div id="createTab" class="tab-content active">
+            <div id="createAlert" class="alert"></div>
+
+            <form id="createTeamForm" novalidate>
+                <!-- Hidden tournament field -->
+                <input type="hidden" name="id_tournoi" id="id_tournoi">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Team Name <span class="required">*</span></label>
+                        <input type="text" name="team_name" id="team_name" placeholder="Ex: The Champions"
+                            autocomplete="off">
+                        <div class="error-message" id="error_team_name"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Team Tag <span class="required">*</span></label>
+                        <input type="text" name="team_tag" id="team_tag" placeholder="Ex: CHAMP" autocomplete="off">
+                        <div class="error-message" id="error_team_tag"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Country <span class="required">*</span></label>
+                        <select name="country" id="country">
+                            <option value="">-- Select --</option>
+                            <option value="Tunisia">Tunisia</option>
+                            <option value="France">France</option>
+                            <option value="Algeria">Algeria</option>
+                            <option value="Morocco">Morocco</option>
+                            <option value="Egypt">Egypt</option>
+                            <option value="Belgium">Belgium</option>
+                            <option value="Switzerland">Switzerland</option>
+                            <option value="Canada">Canada</option>
+                        </select>
+                        <div class="error-message" id="error_country"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category <span class="required">*</span></label>
+                        <select name="category" id="category">
+                            <option value="">-- Select --</option>
+                            <option value="amateur">Amateur</option>
+                            <option value="semi-pro">Semi-Pro</option>
+                            <option value="professional">Professional</option>
+                            <option value="junior">Junior</option>
+                            <option value="senior">Senior</option>
+                        </select>
+                        <div class="error-message" id="error_category"></div>
+                    </div>
+                </div>
+
+                <h3 class="section-title">👤 Leader Information</h3>
+
+                <div class="form-group">
+                    <label>Full Name <span class="required">*</span></label>
+                    <input type="text" name="leader_name" id="leader_name" placeholder="Ex: Mohamed Ben Ali"
+                        autocomplete="off">
+                    <div class="error-message" id="error_leader_name"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="text" name="leader_email" id="leader_email" placeholder="example@email.com"
+                            autocomplete="off">
+                        <div class="error-message" id="error_leader_email"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone <span class="required">*</span></label>
+                        <input type="text" name="leader_phone" id="leader_phone" placeholder="+216 12 345 678"
+                            autocomplete="off">
+                        <div class="error-message" id="error_leader_phone"></div>
+                    </div>
+                </div>
+
+                <h3 class="section-title">👥 Team Members (Optional - Max 4 members)</h3>
+                <p style="color: #999; margin-bottom: 15px;">A team can have between 1 and 5 members (leader included)
+                </p>
+
+                <button type="button" class="add-member-btn" id="addMemberBtn" onclick="addMember()">
+                    ➕ Add a Member
+                </button>
+
+                <div id="membersContainer" class="members-container"></div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Create Team
+                </button>
+            </form>
+        </div>
+
+        <!-- TAB: Join a Team -->
+        <div id="joinTab" class="tab-content">
+            <div id="joinAlert" class="alert"></div>
+
+            <div id="teamsList" class="teams-list"></div>
+        </div>
+    </div>
+
+    <!-- Modal for joining a team -->
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Join the Team</h3>
+            <form id="joinTeamForm" novalidate>
+                <input type="hidden" id="join_id_team" name="id_team">
+
+                <div class="form-group">
+                    <label>Your Full Name <span class="required">*</span></label>
+                    <input type="text" name="member_name" id="member_name" placeholder="Ex: Ahmed Trabelsi"
+                        autocomplete="off">
+                    <div class="error-message" id="error_member_name"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Your Email <span class="required">*</span></label>
+                    <input type="text" name="member_email" id="member_email" placeholder="example@email.com"
+                        autocomplete="off">
+                    <div class="error-message" id="error_member_email"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Your Phone <span class="required">*</span></label>
+                    <input type="text" name="member_phone" id="member_phone" placeholder="+216 12 345 678"
+                        autocomplete="off">
+                    <div class="error-message" id="error_member_phone"></div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn secondary" onclick="closeJoinModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="modal-btn primary" id="joinSubmitBtn">
+                        Join
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Include validation script -->
+    <script src="team-validation.js"></script>
+    <script src="team.js"></script>
+
+    <script>
+        // ============================================
+        // TOURNAMENT AUTO-SELECTION SCRIPT
+        // ============================================
+
+        // Get tournament ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const tournoiIdFromUrl = urlParams.get('tournoi');
+
+        // Store globally for use in team.js
+        window.selectedTournoiId = tournoiIdFromUrl;
+
+        // Initialize page with tournament context
+        document.addEventListener('DOMContentLoaded', function () {
+            if (tournoiIdFromUrl) {
+                // Set hidden field
+                const hiddenField = document.getElementById('id_tournoi');
+                if (hiddenField) {
+                    hiddenField.value = tournoiIdFromUrl;
+                }
+
+                // Load tournament details to show banner
+                loadTournamentDetails(tournoiIdFromUrl);
+            }
+        });
+
+        /**
+         * Load tournament details from API
+         */
+        async function loadTournamentDetails(tournoiId) {
+            try {
+                // Fetch tournament data from API
+                let response = await fetch(`tournoi_handler.php`);
+                let data = await response.json();
+
+                if (data.success && data.data) {
+                    // Find the specific tournament
+                    const tournoi = data.data.find(t => t.id == tournoiId);
+
+                    if (tournoi) {
+                        displayTournamentBanner(tournoi);
+                    } else {
+                        console.warn('Tournament not found with ID:', tournoiId);
+                        displayFallbackBanner(tournoiId);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading tournament details:', error);
+                displayFallbackBanner(tournoiId);
+            }
+        }
+
+        /**
+         * Display tournament banner with full details
+         */
+        function displayTournamentBanner(tournoi) {
+            const banner = document.getElementById('tournamentBanner');
+            const nameElement = document.getElementById('tournamentName');
+            const levelElement = document.getElementById('tournamentLevel');
+
+            // Show banner
+            banner.style.display = 'flex';
+            nameElement.innerHTML = `🏆 ${escapeHtml(tournoi.nom)}`;
+
+            // Format level badge with color
+            levelElement.textContent = getNiveauText(tournoi.niveau);
+            levelElement.style.cssText = `
+                background: ${getNiveauGradient(tournoi.niveau)};
+                color: white;
+                padding: 8px 18px;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 14px;
+            `;
+
+            // Add theme info if available
+            if (tournoi.theme) {
+                const existingTheme = banner.querySelector('.tournament-theme-info');
+                if (existingTheme) existingTheme.remove();
+
+                const themeDiv = document.createElement('div');
+                themeDiv.className = 'tournament-theme-info';
+                themeDiv.style.cssText = `
+                    font-size: 14px; 
+                    color: rgba(255,255,255,0.85); 
+                    margin-top: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+                themeDiv.innerHTML = `<span style="font-size: 16px;">🎯</span> <strong>Theme:</strong> ${escapeHtml(tournoi.theme)}`;
+                nameElement.parentElement.appendChild(themeDiv);
+            }
+
+            // Add date info if available
+            if (tournoi.date_debut && tournoi.date_fin) {
+                const existingDate = banner.querySelector('.tournament-date-info');
+                if (existingDate) existingDate.remove();
+
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'tournament-date-info';
+                dateDiv.style.cssText = `
+                    font-size: 13px; 
+                    color: rgba(255,255,255,0.75); 
+                    margin-top: 5px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                `;
+                dateDiv.innerHTML = `<span>📅</span> ${formatDateRange(tournoi.date_debut, tournoi.date_fin)}`;
+                nameElement.parentElement.appendChild(dateDiv);
+            }
+        }
+
+        /**
+         * Display fallback banner if tournament details cannot be loaded
+         */
+        function displayFallbackBanner(tournoiId) {
+            const banner = document.getElementById('tournamentBanner');
+            const nameElement = document.getElementById('tournamentName');
+            const levelElement = document.getElementById('tournamentLevel');
+
+            banner.style.display = 'flex';
+            nameElement.innerHTML = `🏆 Tournament #${tournoiId}`;
+            levelElement.textContent = 'Selected';
+            levelElement.style.cssText = `
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                color: white;
+                padding: 8px 18px;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 14px;
+            `;
+        }
+
+        /**
+         * Get localized difficulty level text with emoji
+         */
+        function getNiveauText(niveau) {
+            const mapping = {
+                'Débutant': '🟢 Beginner',
+                'Intermédiaire': '🟡 Intermediate',
+                'Expert': '🔴 Expert'
+            };
+            return mapping[niveau] || niveau || 'Unknown';
+        }
+
+        /**
+         * Get CSS gradient for difficulty level badge
+         */
+        function getNiveauGradient(niveau) {
+            const mapping = {
+                'Débutant': 'linear-gradient(135deg, #10b981, #059669)',
+                'Intermédiaire': 'linear-gradient(135deg, #f59e0b, #d97706)',
+                'Expert': 'linear-gradient(135deg, #ef4444, #dc2626)'
+            };
+            return mapping[niveau] || 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+        }
+
+        /**
+         * Format date range for display
+         */
+        function formatDateRange(start, end) {
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            const startDate = new Date(start).toLocaleDateString('en-US', options);
+            const endDate = new Date(end).toLocaleDateString('en-US', options);
+            return `${startDate} - ${endDate}`;
+        }
+
+        /**
+         * Escape HTML to prevent XSS
+         */
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

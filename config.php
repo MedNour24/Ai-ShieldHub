@@ -1,9 +1,5 @@
 <?php
-/**
- * Configuration de la base de données et des sessions
- * Fichier: config.php
- */
-
+// Activer le rapport d'erreurs pour le développement
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
@@ -116,9 +112,14 @@ if (session_status() === PHP_SESSION_NONE) {
 
 date_default_timezone_set('Africa/Tunis');
 
+// Constantes du site
 define('SITE_NAME', 'AI ShieldHub');
-define('SITE_URL', 'http://localhost/mon-projet-web');
+define('SITE_URL', 'http://localhost/user1');
 define('ADMIN_EMAIL', 'admin@aishieldhub.com');
+
+// NOUVEAU: Définir le chemin de base pour les redirections
+define('BASE_PATH', '/user1');
+define('LOGIN_PAGE', BASE_PATH . '/view/FutureAi/index.php');
 
 if (isset($_GET['test_db'])) {
     $database = new Database();
@@ -129,4 +130,31 @@ if (isset($_GET['test_db'])) {
     }
     exit;
 }
-?>
+// class config
+// {   private static $pdo = null;
+//     public static function getConnexion()
+//     {
+//         if (!isset(self::$pdo)) {
+//             $servername="localhost";
+//             $username="root";
+//             $password ="";
+//             $dbname="modulecommunaute";
+//             try {
+//                 self::$pdo = new PDO("mysql:host=$servername;dbname=$dbname",
+//                         $username,
+//                         $password
+                   
+//                 );
+//                 self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+//                 self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+               
+               
+//             } catch (Exception $e) {
+//                 die('Erreur: ' . $e->getMessage());
+//             }
+//         }
+//         return self::$pdo;
+//     }
+// }
+// config::getConnexion();
+// ?>
