@@ -1,22 +1,90 @@
 <?php
-session_start();
-
-// Vérifier si l'utilisateur est connecté et est un admin
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    // Rediriger vers la page de connexion
-    header('Location: ../../future-ai/index.php');
-    exit;
-}
-
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
-    // Si l'utilisateur n'est pas admin, le rediriger vers la page étudiante
-    header('Location: ../../future-ai/index2.php');
-    exit;
-}
-
-// Inclure la configuration
 require_once '../../../config.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_only_cookies', 1);
+    ini_set('session.cookie_secure', 0);
+    
+    session_start();
+    
+    if (!isset($_SESSION['initiated'])) {
+        session_regenerate_id(true);
+        $_SESSION['initiated'] = true;
+    }
+}
+
+// ==================== VOS FONCTIONS ====================
+
+function isLoggedIn() {
+    return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+}
+
+function isAdmin() {
+    return isLoggedIn() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
+}
+
+function getUserId() {
+    return $_SESSION['user_id'] ?? null;
+}
+
+function getUserName() {
+    return $_SESSION['user_name'] ?? null;
+}
+
+function getUserEmail() {
+    return $_SESSION['user_email'] ?? null;
+}
+
+function getUserRole() {
+    return $_SESSION['user_role'] ?? null;
+}
+
+function logout() {
+    session_unset();
+    session_destroy();
+    if (isset($_COOKIE['remember_token'])) {
+        setcookie('remember_token', '', time() - 3600, "/");
+    }
+}
+
+function redirect($url) {
+    header("Location: " . $url);
+    exit();
+}
+
+function cleanInput($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return $data;
+}
+
+define('SITE_NAME', 'AI ShieldHub');
+define('SITE_URL', 'http://localhost/user1');
+define('ADMIN_EMAIL', 'admin@aishieldhub.com');
+define('BASE_PATH', '/user1');
+define('LOGIN_PAGE', BASE_PATH . '/view/FutureAi/index.php');
+define('STUDENT_PAGE', BASE_PATH . '/view/FutureAi/index2.php');
+define('ADMIN_PAGE', BASE_PATH . '/view/back/kaiadmin-lite-1.2.0/index.php');
+
+date_default_timezone_set('Africa/Tunis');
+
+// ==================== VÉRIFICATIONS DE SÉCURITÉ ====================
+
+if (!isLoggedIn()) {
+    redirect(LOGIN_PAGE);
+}
+
+if (!isAdmin()) {
+    redirect(STUDENT_PAGE);
+}
+
+// ==================== FIN DE LA PARTIE PHP ====================
 ?>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -1016,6 +1084,865 @@ require_once '../../../config.php';
   background: #f8f9fa;
   color: #667eea;
 }
+
+/* View Button Styles */
+.btn-view {
+    background: var(--success-gradient);
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+}
+
+.btn-view:hover {
+    background: linear-gradient(135deg, #4facfe 0%, #00c6fb 100%);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+}
+
+/* View Modal Styles */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.user-detail-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 1px solid #e3e6f0;
+}
+
+.user-profile-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.user-avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    border: 5px solid white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3em;
+    font-weight: 800;
+}
+
+.user-name-display {
+    font-size: 1.8em;
+    font-weight: 800;
+    color: #2d3748;
+    margin-bottom: 5px;
+}
+
+.user-email-display {
+    font-size: 1.1em;
+    color: #718096;
+    margin-bottom: 15px;
+}
+
+.user-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.info-item {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.info-label {
+    font-size: 0.85em;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-value {
+    font-size: 1.1em;
+    color: #2d3748;
+    font-weight: 700;
+}
+
+.action-buttons-view {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #e9ecef;
+}
+
+.btn-action-modal {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95em;
+    border: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-edit-modal {
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: white;
+}
+
+.btn-edit-modal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(246, 211, 101, 0.4);
+    color: white;
+}
+
+.btn-delete-modal {
+    background: var(--danger-gradient);
+    color: white;
+}
+
+.btn-delete-modal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .user-info-grid {
+        grid-template-columns: 1fr;
+    }
+    .action-buttons-view {
+        flex-direction: column;
+    }
+    .btn-action-modal {
+        width: 100%;
+        justify-content: center;
+    }
+}
+/* Dark Mode Toggle Button */
+#dark-mode-toggle {
+  background: transparent;
+  border: none;
+  color: #697a8d;
+  font-size: 1.2rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#dark-mode-toggle:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+#dark-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+#dark-mode-icon {
+  transition: transform 0.3s ease;
+}
+
+#dark-mode-toggle:hover #dark-mode-icon {
+  transform: rotate(20deg);
+}
+
+/* Dark Mode Variables */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-card: #ffffff;
+  --text-primary: #2d3748;
+  --text-secondary: #718096;
+  --border-color: #e9ecef;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --hover-bg: #f8f9fa;
+  --input-bg: #ffffff;
+  --table-even-bg: #fafbfc;
+  
+  /* Gradients */
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --danger-gradient: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  --bg-primary: #1e293b;
+  --bg-secondary: #0f172a;
+  --bg-card: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --hover-bg: #334155;
+  --input-bg: #0f172a;
+  --table-even-bg: #0f172a;
+}
+
+/* Apply Dark Mode Colors */
+[data-theme="dark"] body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .main-panel {
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .main-header,
+[data-theme="dark"] .navbar-header,
+[data-theme="dark"] .logo-header {
+  background-color: var(--bg-primary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+/* CORRECTION SPÉCIFIQUE POUR LE TABLEAU */
+[data-theme="dark"] .table tbody td {
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+[data-theme="dark"] .table tbody tr {
+  background-color: #000000 !important;
+}
+
+[data-theme="dark"] .table tbody tr:nth-child(even) {
+  background-color: #0a0a0a !important;
+}
+
+[data-theme="dark"] .table tbody tr td strong {
+  color: #ffffff !important;
+}
+
+/* Tous les textes en blanc */
+[data-theme="dark"] h1, [data-theme="dark"] h2, 
+[data-theme="dark"] h3, [data-theme="dark"] h4, 
+[data-theme="dark"] h5, [data-theme="dark"] h6,
+[data-theme="dark"] p, [data-theme="dark"] span,
+[data-theme="dark"] div, [data-theme="dark"] label,
+[data-theme="dark"] td, [data-theme="dark"] th,
+[data-theme="dark"] a:not(.btn), [data-theme="dark"] li,
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .page-title h3,
+[data-theme="dark"] .page-title h6 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-round {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+[data-theme="dark"] .card-header {
+  background-color: var(--bg-card);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .card-category {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table {
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .table-responsive {
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .table thead {
+  background: #1a1a1a;
+}
+
+[data-theme="dark"] .table thead th {
+  color: #ffffff !important;
+  background-color: #1a1a1a;
+  border-bottom: 2px solid var(--border-color);
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+  background-color: #1a1a1a !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+[data-theme="dark"] .table tbody td {
+  border-color: var(--border-color);
+}
+
+/* Badges - garder les couleurs vives */
+[data-theme="dark"] .badge-success {
+  background: var(--success-gradient);
+  color: white !important;
+}
+
+[data-theme="dark"] .badge-danger {
+  background: var(--danger-gradient);
+  color: white !important;
+}
+
+[data-theme="dark"] .badge-primary {
+  background: var(--primary-gradient);
+  color: white !important;
+}
+
+[data-theme="dark"] .badge-info {
+  background: var(--info-gradient);
+  color: white !important;
+}
+
+[data-theme="dark"] .badge-warning {
+  background: var(--warning-gradient);
+  color: #78350f !important;
+}
+
+/* Search and Filter Section */
+[data-theme="dark"] .search-filter-section {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .filter-select {
+  background-color: var(--input-bg);
+  color: var(--text-primary) !important;
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .filter-select:focus {
+  background-color: var(--input-bg);
+  color: var(--text-primary) !important;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+[data-theme="dark"] .search-input-group i {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-label {
+  color: var(--text-primary) !important;
+}
+
+/* Results Info */
+[data-theme="dark"] .results-info {
+  background: var(--bg-card);
+  border-left-color: #667eea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+[data-theme="dark"] .results-info .text-muted {
+  color: var(--text-primary) !important;
+}
+
+/* User Activity Items */
+[data-theme="dark"] .user-activity-item {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .user-activity-item:hover {
+  background-color: var(--hover-bg);
+}
+
+[data-theme="dark"] .user-name {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .user-email,
+[data-theme="dark"] .last-seen {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .user-role {
+  background-color: var(--bg-primary);
+  color: var(--text-primary) !important;
+}
+
+/* Stats Cards */
+[data-theme="dark"] .card-stats .card-body {
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .card-stats .card-title {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-stats .card-category {
+  color: var(--text-secondary) !important;
+}
+
+/* Activity Stat Cards - Garder les gradients */
+[data-theme="dark"] .activity-stat-card {
+  /* Les gradients restent colorés même en dark mode */
+}
+
+[data-theme="dark"] .activity-stat-number,
+[data-theme="dark"] .activity-stat-label {
+  color: #ffffff !important;
+}
+
+/* Notifications */
+[data-theme="dark"] .notif-box {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dropdown-title {
+  background: var(--bg-primary);
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .notif-item {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .notif-item:hover {
+  background-color: var(--hover-bg);
+}
+
+[data-theme="dark"] .notif-item.unread {
+  background-color: rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="dark"] .notif-title {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .notif-message {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .notif-time {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .see-all {
+  color: #667eea !important;
+  border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .see-all:hover {
+  background-color: var(--hover-bg);
+  color: #667eea !important;
+}
+
+/* Modals */
+[data-theme="dark"] .modal-content {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-header {
+  background: var(--primary-gradient);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-title {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .modal-body {
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .modal-footer {
+  background-color: var(--bg-card);
+  border-top-color: var(--border-color);
+}
+
+/* User Detail Card */
+[data-theme="dark"] .user-detail-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .user-profile-header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .user-name-display {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .user-email-display {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .info-item {
+  background-color: var(--bg-primary);
+  border-left-color: #667eea;
+}
+
+[data-theme="dark"] .info-label {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .info-value {
+  color: var(--text-primary) !important;
+}
+
+/* Sidebar */
+[data-theme="dark"] .sidebar {
+  background-color: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .sidebar[data-background-color="dark"] {
+  background-color: var(--bg-primary) !important;
+}
+
+/* Topbar icons */
+[data-theme="dark"] .topbar-icon .nav-link {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .topbar-icon .nav-link:hover {
+  color: #667eea;
+}
+
+/* Profile dropdown */
+[data-theme="dark"] .profile-username span {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .dropdown-user {
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .user-box {
+  background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .user-box h4 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .user-box .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+/* Buttons - garder les gradients mais ajuster le contraste */
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-light {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-light:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-primary) !important;
+}
+
+/* Dropdown menus */
+[data-theme="dark"] .dropdown-menu {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .dropdown-divider {
+  border-top-color: var(--border-color);
+}
+
+/* Highlight */
+[data-theme="dark"] .highlight {
+  background-color: rgba(251, 191, 36, 0.25);
+  color: #fbbf24;
+  border-radius: 3px;
+}
+
+/* Empty State */
+[data-theme="dark"] .empty-state {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .empty-state i {
+  opacity: 0.4;
+  color: var(--text-secondary);
+}
+
+/* Scrollbar - Style amélioré */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Action buttons - Amélioration du contraste */
+[data-theme="dark"] .btn-view {
+  background: var(--success-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+[data-theme="dark"] .btn-edit {
+  background: var(--warning-gradient);
+  color: #78350f;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+}
+
+[data-theme="dark"] .btn-delete,
+[data-theme="dark"] .btn-ban {
+  background: var(--danger-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .btn-unban {
+  background: var(--success-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+/* Logo et branding */
+[data-theme="dark"] .logo-header {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Text colors généraux */
+[data-theme="dark"] .op-7 {
+  opacity: 0.7;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] small {
+  color: var(--text-secondary) !important;
+}
+
+/* Page inner container */
+[data-theme="dark"] .page-inner {
+  background-color: transparent;
+}
+
+[data-theme="dark"] .container {
+  background-color: transparent;
+}
+
+/* Loading spinner */
+[data-theme="dark"] .loading-spinner {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .spinner-border {
+  color: #667eea !important;
+}
+
+/* Nav sidebar items */
+[data-theme="dark"] .nav-item a {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .nav-item.active {
+  background-color: rgba(102, 126, 234, 0.2);
+}
+
+/* Icon colors */
+[data-theme="dark"] .fas,
+[data-theme="dark"] .far,
+[data-theme="dark"] .fab {
+  color: inherit;
+}
+
+[data-theme="dark"] .icon-big {
+  color: var(--text-primary) !important;
+}
+
+/* Transition smooth pour tous les éléments */
+body, .card, .table, .modal-content, .form-control, 
+.btn, .sidebar, .navbar-header, .badge {
+  transition: background-color 0.3s ease, color 0.3s ease, 
+              border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* CORRECTION SPÉCIFIQUE : Assurer que tous les textes dans le tableau sont visibles */
+[data-theme="dark"] #users-table tbody td,
+[data-theme="dark"] #users-table tbody td strong,
+[data-theme="dark"] #users-table tbody td .badge {
+  color: #ffffff !important;
+}
+.pagination-row {
+        background: #f8f9fa !important;
+      }
+
+      .pagination-row:hover {
+        background: #f8f9fa !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .pagination-number {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pagination-number:hover:not(.active) {
+        transform: scale(1.1);
+      }
+
+      .pagination-number.active {
+        cursor: default;
+        box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3) !important;
+      }
+
+      .pagination-prev:hover,
+      .pagination-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .pagination-prev:active,
+      .pagination-next:active,
+      .pagination-number:active {
+        transform: scale(0.95);
+      }
+
+      /* Animation de transition */
+      #users-tbody tr:not(.pagination-row) {
+        animation: fadeIn 0.3s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Dark Mode pour la pagination */
+      [data-theme="dark"] .pagination-row {
+        background: var(--bg-card) !important;
+      }
+
+      [data-theme="dark"] .pagination-number:not(.active) {
+        background: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+      }
+
+      [data-theme="dark"] .pagination-number:not(.active):hover {
+        background: var(--hover-bg) !important;
+      }
+
+      [data-theme="dark"] .pagination-prev,
+      [data-theme="dark"] .pagination-next {
+        background: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+      }
+
+      [data-theme="dark"] .pagination-next {
+        background: var(--primary-gradient) !important;
+        color: white !important;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .pagination-row > td > div {
+          flex-wrap: wrap;
+          gap: 8px !important;
+        }
+        
+        .pagination-number {
+          min-width: 35px !important;
+          height: 35px !important;
+          font-size: 12px !important;
+        }
+        
+        .pagination-prev,
+        .pagination-next {
+          min-width: 70px !important;
+          font-size: 12px !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1311,6 +2238,7 @@ require_once '../../../config.php';
               class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
             >
               <div class="container-fluid">
+                
                 <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
                   <!-- Notification Bell - À CÔTÉ DU PROFIL -->
                   <li class="nav-item topbar-icon dropdown hidden-caret me-3">
@@ -1340,6 +2268,11 @@ require_once '../../../config.php';
                         </a>
                       </li>
                     </ul>
+                    <li class="nav-item topbar-icon me-3">
+  <button class="nav-link" id="dark-mode-toggle" title="Toggle Dark Mode">
+    <i class="fas fa-moon" id="dark-mode-icon"></i>
+  </button>
+</li>
                   </li>
 
                   <!-- User Profile Dropdown -->
@@ -1753,6 +2686,82 @@ require_once '../../../config.php';
       </div>
     </div>
 
+    <!-- View User Details Modal -->
+    <div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="viewUserModalLabel">
+              <i class="fas fa-user-circle"></i>
+              User Details
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="user-detail-card">
+              <!-- User Profile Header -->
+              <div class="user-profile-header">
+                <div class="user-avatar-large" id="view-avatar">U</div>
+                <div class="user-name-display" id="view-name">User Name</div>
+                <div class="user-email-display" id="view-email">user@email.com</div>
+                <div>
+                  <span class="badge badge-view" id="view-role-badge">Role</span>
+                  <span class="badge badge-view ms-2" id="view-status-badge">Status</span>
+                </div>
+              </div>
+
+              <!-- User Info Grid -->
+              <div class="user-info-grid">
+                <div class="info-item">
+                  <div class="info-label">
+                    <i class="fas fa-id-card"></i>
+                    User ID
+                  </div>
+                  <div class="info-value" id="view-id">#000</div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-label">
+                    <i class="fas fa-calendar-alt"></i>
+                    Joined Date
+                  </div>
+                  <div class="info-value" id="view-created">DD/MM/YYYY</div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-label">
+                    <i class="fas fa-envelope"></i>
+                    Email Address
+                  </div>
+                  <div class="info-value" id="view-email-full">email@example.com</div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-label">
+                    <i class="fas fa-user-tag"></i>
+                    Account Status
+                  </div>
+                  <div class="info-value" id="view-status-text">Active</div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="action-buttons-view">
+                <button class="btn btn-action-modal btn-edit-modal" id="edit-from-view">
+                  <i class="fas fa-edit"></i>
+                  Edit User
+                </button>
+                <button class="btn btn-action-modal btn-delete-modal" id="delete-from-view">
+                  <i class="fas fa-trash"></i>
+                  Delete User
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Core JS Files -->
     <script src="assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="assets/js/core/popper.min.js"></script>
@@ -1766,8 +2775,454 @@ require_once '../../../config.php';
         const controllerUrl = '../../../controller/UserController.php';
         let allUsers = [];
         let filteredUsers = [];
-         
-        // Profile Management avec styles d'avatars
+        let currentPage = 1;
+        const usersPerPage = 5;
+        let totalPages = 1;
+        
+        // ==========================================
+        // NOTIFICATION MANAGEMENT - CORRIGÉ
+        // ==========================================
+        let notificationCheckInterval;
+
+        // Charger les notifications au démarrage
+        loadNotifications();
+
+        // Vérifier les nouvelles notifications toutes les 30 secondes
+        notificationCheckInterval = setInterval(function() {
+          loadNotifications();
+        }, 30000);
+
+        // Vérifier l'activité suspecte toutes les 5 minutes
+        setInterval(function() {
+          checkSuspiciousActivity();
+        }, 300000);
+
+        function loadNotifications() {
+          $.ajax({
+            url: controllerUrl,
+            type: 'GET',
+            data: { action: 'get_notifications' },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success && response.data) {
+                updateNotificationUI(response.data.notifications, response.data.unread_count);
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Error loading notifications:', error);
+            }
+          });
+        }
+
+        function updateNotificationUI(notifications, unreadCount) {
+          const badge = $('#notification-count');
+          const ping = $('.notification-ping');
+          
+          if (unreadCount > 0) {
+            badge.text(unreadCount).show();
+            ping.show();
+          } else {
+            badge.hide();
+            ping.hide();
+          }
+          
+          const notificationsList = $('#notifications-list');
+          notificationsList.empty();
+          
+          if (notifications.length === 0) {
+            notificationsList.html(`
+              <div class="notif-center text-center py-4">
+                <i class="fas fa-bell-slash fa-2x mb-3" style="color: #cbd5e0;"></i>
+                <p class="text-muted">Aucune notification</p>
+              </div>
+            `);
+            return;
+          }
+          
+          notifications.forEach(notification => {
+            const notifItem = createNotificationItem(notification);
+            notificationsList.append(notifItem);
+          });
+        }
+
+        function createNotificationItem(notification) {
+          const isUnread = !notification.is_read;
+          const timeAgo = getTimeAgo(notification.created_at);
+          const iconClass = getNotificationIcon(notification.type);
+          const severityBadge = notification.severity !== 'low' ? 
+            `<span class="severity-badge severity-${notification.severity}">${notification.severity.toUpperCase()}</span>` : '';
+          
+          // Utiliser related_user_id au lieu de user_id
+          const relatedUserId = notification.related_user_id || '';
+          
+          return $(`
+            <div class="notif-item ${isUnread ? 'unread' : ''}" 
+                 data-id="${notification.id}" 
+                 data-related-user-id="${relatedUserId}">
+              <div class="d-flex align-items-start">
+                <div class="notif-icon ${notification.type}">
+                  <i class="${iconClass}"></i>
+                </div>
+                <div class="notif-content">
+                  <div class="notif-title">
+                    ${escapeHtml(notification.title)}
+                    ${severityBadge}
+                  </div>
+                  <div class="notif-message">${escapeHtml(notification.message)}</div>
+                  <div class="notif-time">${timeAgo}</div>
+                  ${relatedUserId ? '<small class="text-primary"><i class="fas fa-hand-pointer me-1"></i>Cliquez pour voir les détails</small>' : ''}
+                </div>
+                <div class="notif-delete" data-id="${notification.id}">
+                  <i class="fas fa-times"></i>
+                </div>
+              </div>
+            </div>
+          `).on('click', function(e) {
+            e.stopPropagation();
+            
+            // Ne rien faire si on clique sur le bouton delete
+            if (!$(e.target).closest('.notif-delete').length) {
+              const notificationId = $(this).data('id');
+              const relatedUserId = $(this).data('relatedUserId');
+              
+              // Marquer la notification comme lue
+              markNotificationAsRead(notificationId);
+              
+              // Si la notification a un related_user_id, afficher les détails
+              if (relatedUserId) {
+                // Fermer le dropdown de notifications
+                $('#notificationDropdown').dropdown('hide');
+                
+                // Attendre un peu puis afficher les détails
+                setTimeout(() => {
+                  showUserFromNotification(relatedUserId);
+                }, 300);
+              }
+            }
+          });
+        }
+
+        // NOUVELLE FONCTION : Afficher l'utilisateur à partir d'une notification
+        function showUserFromNotification(userId) {
+          // D'abord, s'assurer que nous sommes sur la vue Base
+          if ($('#base-view').is(':hidden')) {
+            showBase();
+          }
+          
+          // Chercher d'abord dans les utilisateurs déjà chargés
+          const user = allUsers.find(u => u.id == userId);
+          
+          if (user) {
+            const userData = {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              status: user.status,
+              created: user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'
+            };
+            
+            showUserDetailsModal(userData);
+          } else {
+            // Si l'utilisateur n'est pas dans la liste chargée, faire une requête AJAX
+            $.ajax({
+              url: controllerUrl,
+              type: 'GET',
+              data: { action: 'get_user_details', user_id: userId },
+              dataType: 'json',
+              beforeSend: function() {
+                // Afficher un loader
+                showSuccess('Chargement des détails de l\'utilisateur...');
+              },
+              success: function(response) {
+                if (response.success && response.data) {
+                  const userData = {
+                    id: response.data.id,
+                    name: response.data.name,
+                    email: response.data.email,
+                    role: response.data.role,
+                    status: response.data.status,
+                    created: response.data.created_at ? new Date(response.data.created_at).toLocaleDateString() : 'Unknown'
+                  };
+                  
+                  showUserDetailsModal(userData);
+                } else {
+                  showError('Impossible de charger les détails: ' + (response.message || 'Erreur inconnue'));
+                }
+              },
+              error: function(xhr, status, error) {
+                showError('Erreur lors du chargement: ' + error);
+              }
+            });
+          }
+        }
+
+        function getNotificationIcon(type) {
+          const icons = {
+            'registration': 'fas fa-user-plus',
+            'suspicious_activity': 'fas fa-exclamation-triangle',
+            'system': 'fas fa-cog',
+            'security': 'fas fa-shield-alt'
+          };
+          return icons[type] || 'fas fa-bell';
+        }
+
+        function getTimeAgo(dateString) {
+          const now = new Date();
+          const date = new Date(dateString);
+          const seconds = Math.floor((now - date) / 1000);
+          
+          if (seconds < 60) return 'Just now';
+          if (seconds < 3600) return Math.floor(seconds / 60) + ' min ago';
+          if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+          if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+          
+          return date.toLocaleDateString();
+        }
+
+        function markNotificationAsRead(notificationId) {
+          $.ajax({
+            url: controllerUrl,
+            type: 'POST',
+            data: {
+              action: 'mark_notification_read',
+              notification_id: notificationId
+            },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success) {
+                // Retirer visuellement la classe unread
+                $(`.notif-item[data-id="${notificationId}"]`).removeClass('unread');
+                
+                // Mettre à jour le badge
+                if (response.data && response.data.unread_count !== undefined) {
+                  const badge = $('#notification-count');
+                  const ping = $('.notification-ping');
+                  
+                  if (response.data.unread_count > 0) {
+                    badge.text(response.data.unread_count).show();
+                  } else {
+                    badge.hide();
+                    ping.hide();
+                  }
+                }
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Erreur marquage notification:', error);
+            }
+          });
+        }
+
+        $('#mark-all-read').on('click', function(e) {
+          e.preventDefault();
+          
+          $.ajax({
+            url: controllerUrl,
+            type: 'POST',
+            data: { action: 'mark_all_notifications_read' },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success) {
+                $('.notif-item').removeClass('unread');
+                $('#notification-count').hide();
+                $('.notification-ping').hide();
+                showSuccess('All notifications marked as read');
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Error marking all notifications as read:', error);
+            }
+          });
+        });
+
+        $('#refresh-notifications').on('click', function(e) {
+          e.preventDefault();
+          loadNotifications();
+          showSuccess('Notifications refreshed');
+        });
+
+        $(document).on('click', '.notif-delete', function(e) {
+          e.stopPropagation();
+          const notificationId = $(this).data('id');
+          
+          // Confirmation facultative
+          if (!confirm('Supprimer cette notification ?')) {
+            return;
+          }
+          
+          $.ajax({
+            url: controllerUrl,
+            type: 'POST',
+            data: {
+              action: 'delete_notification',
+              notification_id: notificationId
+            },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success) {
+                // Animation de disparition
+                $(`.notif-item[data-id="${notificationId}"]`).fadeOut(300, function() {
+                  $(this).remove();
+                  
+                  // Si plus de notifications, afficher message vide
+                  if ($('.notif-item').length === 0) {
+                    $('#notifications-list').html(`
+                      <div class="notif-center text-center py-4">
+                        <i class="fas fa-bell-slash fa-2x mb-3" style="color: #cbd5e0;"></i>
+                        <p class="text-muted">Aucune notification</p>
+                      </div>
+                    `);
+                  }
+                });
+                
+                // Mettre à jour le badge
+                if (response.data && response.data.unread_count !== undefined) {
+                  const badge = $('#notification-count');
+                  const ping = $('.notification-ping');
+                  
+                  if (response.data.unread_count > 0) {
+                    badge.text(response.data.unread_count).show();
+                  } else {
+                    badge.hide();
+                    ping.hide();
+                  }
+                }
+                
+                showSuccess('Notification supprimée');
+              } else {
+                showError('Échec de la suppression');
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Erreur suppression notification:', error);
+              showError('Erreur lors de la suppression');
+            }
+          });
+        });
+
+        function checkSuspiciousActivity() {
+          $.ajax({
+            url: controllerUrl,
+            type: 'GET',
+            data: { action: 'check_suspicious_activity' },
+            dataType: 'json',
+            success: function(response) {
+              if (response.success && response.data) {
+                if (response.data.suspicious_count > 0) {
+                  loadNotifications();
+                }
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Error checking suspicious activity:', error);
+            }
+          });
+        }
+
+        $(window).on('unload', function() {
+          if (notificationCheckInterval) {
+            clearInterval(notificationCheckInterval);
+          }
+        });
+
+        // ==========================================
+        // VIEW USER MODAL FUNCTIONALITY
+        // ==========================================
+        let currentViewUser = null;
+
+        // Event delegation pour les boutons View
+        $(document).on('click', '.btn-view-user', function() {
+          const userData = {
+            id: $(this).data('id'),
+            name: $(this).data('name'),
+            email: $(this).data('email'),
+            role: $(this).data('role'),
+            status: $(this).data('status'),
+            created: $(this).data('created')
+          };
+          
+          showUserDetailsModal(userData);
+        });
+
+        function showUserDetailsModal(user) {
+          currentViewUser = user;
+          
+          // Set avatar initial
+          const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+          $('#view-avatar').text(initial);
+          
+          // Set user info
+          $('#view-name').text(user.name);
+          $('#view-email').text(user.email);
+          $('#view-email-full').text(user.email);
+          $('#view-id').text('#' + user.id);
+          $('#view-created').text(user.created);
+          $('#view-status-text').text(user.status.charAt(0).toUpperCase() + user.status.slice(1));
+          
+          // Set role badge
+          const roleBadge = $('#view-role-badge');
+          const roleText = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+          roleBadge.text(roleText);
+          
+          if (user.role === 'admin') {
+            roleBadge.removeClass('badge-info').addClass('badge-primary');
+          } else {
+            roleBadge.removeClass('badge-primary').addClass('badge-info');
+          }
+          
+          // Set status badge
+          const statusBadge = $('#view-status-badge');
+          statusBadge.text(user.status.charAt(0).toUpperCase() + user.status.slice(1));
+          
+          if (user.status === 'active') {
+            statusBadge.removeClass('badge-danger').addClass('badge-success');
+          } else {
+            statusBadge.removeClass('badge-success').addClass('badge-danger');
+          }
+          
+          // Show modal
+          $('#viewUserModal').modal('show');
+        }
+
+        // Edit from view modal
+        $('#edit-from-view').on('click', function() {
+          if (currentViewUser) {
+            $('#viewUserModal').modal('hide');
+            
+            // Wait for close animation then open edit modal
+            setTimeout(() => {
+              openEditModal(
+                currentViewUser.id,
+                currentViewUser.name,
+                currentViewUser.email,
+                currentViewUser.role,
+                currentViewUser.status
+              );
+            }, 300);
+          }
+        });
+
+        // Delete from view modal
+        $('#delete-from-view').on('click', function() {
+          if (currentViewUser) {
+            $('#viewUserModal').modal('hide');
+            
+            // Wait for close animation then confirm delete
+            setTimeout(() => {
+              deleteUser(currentViewUser.id, currentViewUser.name);
+            }, 300);
+          }
+        });
+
+        // Clean up when modal is hidden
+        $('#viewUserModal').on('hidden.bs.modal', function() {
+          currentViewUser = null;
+        });
+
+        // ==========================================
+        // PROFILE MANAGEMENT AVEC STYLES D'AVATARS
+        // ==========================================
         const avatarsByStyle = {
           robot: [
             'robot1.png', 'robot2.png', 'robot3.png', 'robot4.png',
@@ -1796,42 +3251,58 @@ require_once '../../../config.php';
         let currentBgColor = '#667eea';
 
         function loadAvatars(style, avatarToSelect = null) {
-          currentStyle = style;
-          const avatarGrid = $('#avatar-grid');
-          avatarGrid.empty();
-          
-          if (!avatarsByStyle[style]) {
-            console.error('Style not found:', style);
-            return;
-          }
-          
-          avatarsByStyle[style].forEach((avatar, index) => {
+    currentStyle = style;
+    const avatarGrid = $('#avatar-grid');
+    avatarGrid.empty();
+    
+    if (!avatarsByStyle[style]) {
+        console.error('Style not found:', style);
+        return;
+    }
+    
+    // Afficher un message de chargement
+    avatarGrid.html('<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Loading avatars...</div>');
+    
+    // Simuler le chargement des avatars
+    setTimeout(() => {
+        avatarGrid.empty();
+        
+        avatarsByStyle[style].forEach((avatar, index) => {
+            // CORRECTION: Chemin corrigé
             const avatarPath = `assets/img/avatars/${style}/${avatar}`;
             const avatarElement = $(`
-              <img src="${avatarPath}" 
-                   class="avatar-option" 
-                   data-avatar="${avatar}"
-                   data-style="${style}"
-                   alt="Avatar ${index + 1}"
-                   onerror="this.src='assets/img/profile.jpg'"
-                   style="background-color: ${currentBgColor};">
+                <img src="${avatarPath}" 
+                     class="avatar-option" 
+                     data-avatar="${avatar}"
+                     data-style="${style}"
+                     alt="Avatar ${index + 1}"
+                     onerror="this.onerror=null; this.src='assets/img/profile.jpg'"
+                     style="background-color: ${currentBgColor}; width: 80px; height: 80px; object-fit: cover; border-radius: 50%;">
             `);
             
             avatarElement.on('click', function() {
-              $('.avatar-option').removeClass('selected');
-              $(this).addClass('selected');
-              $('#selected-avatar').val(`${style}/${avatar}`);
-              $('#profile-preview').attr('src', avatarPath);
-              updateAvatarBackground();
+                $('.avatar-option').removeClass('selected');
+                $(this).addClass('selected');
+                // CORRECTION: Format du chemin
+                $('#selected-avatar').val(`${style}/${avatar}`);
+                $('#profile-preview').attr('src', avatarPath);
+                updateAvatarBackground();
+                
+                // Debug log
+                console.log('Avatar sélectionné:', `${style}/${avatar}`);
             });
             
             avatarGrid.append(avatarElement);
-          });
+        });
 
-          if (avatarToSelect) {
-            $(`.avatar-option[data-avatar="${avatarToSelect}"]`).click();
-          }
+        if (avatarToSelect) {
+            setTimeout(() => {
+                $(`.avatar-option[data-avatar="${avatarToSelect}"]`).click();
+            }, 100);
         }
+    }, 300);
+}
+
 
         function updateAvatarBackground() {
           $('.avatar-option').css('background-color', currentBgColor);
@@ -2065,7 +3536,9 @@ require_once '../../../config.php';
           $('#avatars-tab').tab('show');
         });
 
-        // Navigation entre Dashboard et Base
+        // ==========================================
+        // NAVIGATION ENTRE DASHBOARD ET BASE
+        // ==========================================
         $('#dashboard-link').on('click', function(e) {
           e.preventDefault();
           showDashboard();
@@ -2090,261 +3563,13 @@ require_once '../../../config.php';
           $('#dashboard-nav').removeClass('active');
         }
 
+        // ==========================================
+        // FONCTIONS PRINCIPALES DE GESTION DES UTILISATEURS
+        // ==========================================
         // Load users on page load
         loadUsers();
         loadAdvancedStats();
         
-        // ==========================================
-        // NOTIFICATION MANAGEMENT
-        // ==========================================
-        let notificationCheckInterval;
-
-        // Charger les notifications au démarrage
-        loadNotifications();
-
-        // Vérifier les nouvelles notifications toutes les 30 secondes
-        notificationCheckInterval = setInterval(function() {
-          loadNotifications();
-        }, 30000);
-
-        // Vérifier l'activité suspecte toutes les 5 minutes
-        setInterval(function() {
-          checkSuspiciousActivity();
-        }, 300000);
-
-        function loadNotifications() {
-          $.ajax({
-            url: controllerUrl,
-            type: 'GET',
-            data: { action: 'get_notifications' },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success && response.data) {
-                updateNotificationUI(response.data.notifications, response.data.unread_count);
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error('Error loading notifications:', error);
-            }
-          });
-        }
-
-        function updateNotificationUI(notifications, unreadCount) {
-          const badge = $('#notification-count');
-          const ping = $('.notification-ping');
-          
-          if (unreadCount > 0) {
-            badge.text(unreadCount).show();
-            ping.show();
-          } else {
-            badge.hide();
-            ping.hide();
-          }
-          
-          const notificationsList = $('#notifications-list');
-          notificationsList.empty();
-          
-          if (notifications.length === 0) {
-            notificationsList.html(`
-              <div class="notif-center text-center py-4">
-                <i class="fas fa-bell-slash fa-2x mb-3" style="color: #cbd5e0;"></i>
-                <p class="text-muted">No notifications</p>
-              </div>
-            `);
-            return;
-          }
-          
-          notifications.forEach(notification => {
-            const notifItem = createNotificationItem(notification);
-            notificationsList.append(notifItem);
-          });
-        }
-
-        function createNotificationItem(notification) {
-          const isUnread = !notification.is_read;
-          const timeAgo = getTimeAgo(notification.created_at);
-          const iconClass = getNotificationIcon(notification.type);
-          const severityBadge = notification.severity !== 'low' ? 
-            `<span class="severity-badge severity-${notification.severity}">${notification.severity.toUpperCase()}</span>` : '';
-          
-          return $(`
-            <div class="notif-item ${isUnread ? 'unread' : ''}" data-id="${notification.id}">
-              <div class="d-flex align-items-start">
-                <div class="notif-icon ${notification.type}">
-                  <i class="${iconClass}"></i>
-                </div>
-                <div class="notif-content">
-                  <div class="notif-title">
-                    ${escapeHtml(notification.title)}
-                    ${severityBadge}
-                  </div>
-                  <div class="notif-message">${escapeHtml(notification.message)}</div>
-                  <div class="notif-time">${timeAgo}</div>
-                </div>
-                <div class="notif-delete" data-id="${notification.id}">
-                  <i class="fas fa-times"></i>
-                </div>
-              </div>
-            </div>
-          `).on('click', function(e) {
-            if (!$(e.target).closest('.notif-delete').length) {
-              markNotificationAsRead(notification.id);
-            }
-          });
-        }
-
-        function getNotificationIcon(type) {
-          const icons = {
-            'registration': 'fas fa-user-plus',
-            'suspicious_activity': 'fas fa-exclamation-triangle',
-            'system': 'fas fa-cog',
-            'security': 'fas fa-shield-alt'
-          };
-          return icons[type] || 'fas fa-bell';
-        }
-
-        function getTimeAgo(dateString) {
-          const now = new Date();
-          const date = new Date(dateString);
-          const seconds = Math.floor((now - date) / 1000);
-          
-          if (seconds < 60) return 'Just now';
-          if (seconds < 3600) return Math.floor(seconds / 60) + ' min ago';
-          if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
-          if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
-          
-          return date.toLocaleDateString();
-        }
-
-        function markNotificationAsRead(notificationId) {
-          $.ajax({
-            url: controllerUrl,
-            type: 'POST',
-            data: {
-              action: 'mark_notification_read',
-              notification_id: notificationId
-            },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                $(`.notif-item[data-id="${notificationId}"]`).removeClass('unread');
-                
-                if (response.data && response.data.unread_count !== undefined) {
-                  const badge = $('#notification-count');
-                  const ping = $('.notification-ping');
-                  
-                  if (response.data.unread_count > 0) {
-                    badge.text(response.data.unread_count).show();
-                  } else {
-                    badge.hide();
-                    ping.hide();
-                  }
-                }
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error('Error marking notification as read:', error);
-            }
-          });
-        }
-
-        $('#mark-all-read').on('click', function(e) {
-          e.preventDefault();
-          
-          $.ajax({
-            url: controllerUrl,
-            type: 'POST',
-            data: { action: 'mark_all_notifications_read' },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                $('.notif-item').removeClass('unread');
-                $('#notification-count').hide();
-                $('.notification-ping').hide();
-                showSuccess('All notifications marked as read');
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error('Error marking all notifications as read:', error);
-            }
-          });
-        });
-
-        $('#refresh-notifications').on('click', function(e) {
-          e.preventDefault();
-          loadNotifications();
-          showSuccess('Notifications refreshed');
-        });
-
-        $(document).on('click', '.notif-delete', function(e) {
-          e.stopPropagation();
-          const notificationId = $(this).data('id');
-          
-          $.ajax({
-            url: controllerUrl,
-            type: 'POST',
-            data: {
-              action: 'delete_notification',
-              notification_id: notificationId
-            },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                $(`.notif-item[data-id="${notificationId}"]`).fadeOut(300, function() {
-                  $(this).remove();
-                  
-                  if ($('.notif-item').length === 0) {
-                    $('#notifications-list').html(`
-                      <div class="notif-center text-center py-4">
-                        <i class="fas fa-bell-slash fa-2x mb-3" style="color: #cbd5e0;"></i>
-                        <p class="text-muted">No notifications</p>
-                      </div>
-                    `);
-                  }
-                });
-                
-                if (response.data && response.data.unread_count !== undefined) {
-                  const badge = $('#notification-count');
-                  if (response.data.unread_count > 0) {
-                    badge.text(response.data.unread_count).show();
-                  } else {
-                    badge.hide();
-                    $('.notification-ping').hide();
-                  }
-                }
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error('Error deleting notification:', error);
-            }
-          });
-        });
-
-        function checkSuspiciousActivity() {
-          $.ajax({
-            url: controllerUrl,
-            type: 'GET',
-            data: { action: 'check_suspicious_activity' },
-            dataType: 'json',
-            success: function(response) {
-              if (response.success && response.data) {
-                if (response.data.suspicious_count > 0) {
-                  loadNotifications();
-                }
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error('Error checking suspicious activity:', error);
-            }
-          });
-        }
-
-        $(window).on('unload', function() {
-          if (notificationCheckInterval) {
-            clearInterval(notificationCheckInterval);
-          }
-        });
-
         // Refresh users button
         $('#refresh-users').on('click', function() {
           loadUsers();
@@ -2592,30 +3817,62 @@ require_once '../../../config.php';
 
             return matchesSearch && matchesRole && matchesStatus;
           });
+          currentPage = 1;
 
           updateFilterResultsText(filteredUsers.length, allUsers.length, searchTerm, roleFilter, statusFilter);
-          displayUsers(filteredUsers, searchTerm);
+          displayUsersWithPagination(filteredUsers, searchTerm);
         }
+        // Nettoyer les avatars chargés
+function clearAvatarGrid() {
+    $('#avatar-grid').empty();
+}
 
-        function updateFilterResultsText(filteredCount, totalCount, searchTerm, roleFilter, statusFilter) {
-          let text = '';
-          
-          if (filteredCount === totalCount) {
-            text = `Showing all ${totalCount} users`;
-          } else {
-            text = `Showing ${filteredCount} of ${totalCount} users`;
+// Charger les avatars d'un style spécifique
+function loadAvatarsForStyle(style) {
+    const avatarGrid = $('#avatar-grid');
+    avatarGrid.html('<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Loading avatars...</div>');
+    
+    // Simuler le chargement des avatars
+    setTimeout(() => {
+        clearAvatarGrid();
+        // Ici, vous chargeriez les avatars depuis votre serveur
+        // Pour l'exemple, on utilise des images statiques
+        for (let i = 1; i <= 8; i++) {
+            const avatarPath = `assets/img/avatars/${style}/avatar${i}.png`;
+            const avatarElement = $(`
+                <img src="${avatarPath}" 
+                     class="avatar-option" 
+                     data-avatar="avatar${i}.png"
+                     alt="Avatar ${i}"
+                     onerror="this.onerror=null; this.src='assets/img/profile.jpg'">
+            `);
             
-            const filters = [];
-            if (searchTerm) filters.push(`search: "${searchTerm}"`);
-            if (roleFilter) filters.push(`role: ${roleFilter}`);
-            if (statusFilter) filters.push(`status: ${statusFilter}`);
+            avatarElement.on('click', function() {
+                $('.avatar-option').removeClass('selected');
+                $(this).addClass('selected');
+                $('#selected-avatar').val(`${style}/avatar${i}.png`);
+                $('#profile-preview').attr('src', avatarPath);
+            });
             
-            if (filters.length > 0) {
-              text += ` (filtered by ${filters.join(', ')})`;
-            }
-          }
+            avatarGrid.append(avatarElement);
+        }
+    }, 500);
+}
+
+        // ========== FONCTIONS DE PAGINATION ==========
+        function displayUsersWithPagination(users, highlightTerm = '') {
+          filteredUsers = users;
+          totalPages = Math.ceil(users.length / usersPerPage);
           
-          $('#filter-results-text').text(text);
+          if (currentPage > totalPages) currentPage = totalPages;
+          if (currentPage < 1) currentPage = 1;
+          
+          const startIndex = (currentPage - 1) * usersPerPage;
+          const endIndex = startIndex + usersPerPage;
+          const paginatedUsers = users.slice(startIndex, endIndex);
+          
+          displayUsers(paginatedUsers, highlightTerm);
+          displayPaginationControls();
         }
 
         function displayUsers(users, highlightTerm = '') {
@@ -2696,6 +3953,16 @@ require_once '../../../config.php';
                 <td>${createdDate}</td>
                 <td class="text-center">
                   <div class="action-buttons">
+                    <button class="btn btn-view btn-action btn-view-user" 
+                            data-id="${user.id}"
+                            data-name="${escapeHtml(user.name || '')}"
+                            data-email="${escapeHtml(user.email || '')}"
+                            data-role="${user.role}"
+                            data-status="${user.status}"
+                            data-created="${createdDate}"
+                            title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </button>
                     <button class="btn btn-sm btn-warning btn-action btn-edit" 
                             data-id="${user.id}"
                             data-name="${escapeHtml(user.name || '')}"
@@ -2733,6 +4000,7 @@ require_once '../../../config.php';
             tbody.append(row);
           });
 
+          // Attach event handlers
           $('.btn-edit').on('click', function() {
             const id = $(this).data('id');
             const name = $(this).data('name');
@@ -2759,6 +4027,168 @@ require_once '../../../config.php';
             const name = $(this).data('name');
             unbanUser(id, name);
           });
+        }
+
+        // Afficher les contrôles de pagination
+        function displayPaginationControls() {
+          const tbody = $('#users-tbody');
+          
+          if (filteredUsers.length === 0) return;
+          
+          let paginationHtml = `
+            <tr class="pagination-row">
+              <td colspan="7" style="border-top: 2px solid #e9ecef; padding: 20px;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+          `;
+          
+          // Logo simplifié (remplace Google)
+          paginationHtml += `
+            <div style="display: flex; align-items: center; gap: 5px; margin-right: 20px;">
+              <i class="fas fa-users" style="color: #667eea; font-size: 20px;"></i>
+              <span style="font-weight: 700; color: #667eea; font-size: 16px;">Users</span>
+            </div>
+          `;
+          
+          // Bouton Previous
+          if (currentPage > 1) {
+            paginationHtml += `
+              <button class="btn btn-sm btn-light pagination-prev" style="min-width: 80px; border-radius: 6px; font-weight: 600;">
+                <i class="fas fa-chevron-left me-1"></i>Previous
+              </button>
+            `;
+          }
+          
+          // Numéros de page
+          const maxVisiblePages = 10;
+          let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+          let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+          
+          if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+          }
+          
+          for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === currentPage;
+            const color = getPageColor(i);
+            
+            paginationHtml += `
+              <button class="btn btn-sm pagination-number ${isActive ? 'active' : ''}" 
+                      data-page="${i}"
+                      style="
+                        min-width: 40px; 
+                        height: 40px; 
+                        border-radius: 50%; 
+                        font-weight: 700;
+                        font-size: 14px;
+                        ${isActive ? `background: ${color}; color: white; border: none; box-shadow: 0 2px 8px ${color}80;` : 'background: white; color: #5f6368; border: 1px solid #dadce0;'}
+                        transition: all 0.3s ease;
+                      ">
+                ${i}
+              </button>
+            `;
+          }
+          
+          // Bouton Next
+          if (currentPage < totalPages) {
+            paginationHtml += `
+              <button class="btn btn-sm btn-primary pagination-next" style="min-width: 80px; border-radius: 6px; font-weight: 600; background: var(--primary-gradient); border: none;">
+                Next<i class="fas fa-chevron-right ms-1"></i>
+              </button>
+            `;
+          }
+          
+          paginationHtml += `
+            <div style="margin-left: 20px; color: #5f6368; font-size: 13px; font-weight: 600;">
+              Page ${currentPage} of ${totalPages} 
+              <span style="color: #9aa0a6;">(${filteredUsers.length} users)</span>
+            </div>
+                </div>
+              </td>
+            </tr>
+          `;
+          
+          tbody.append(paginationHtml);
+          
+          // Événements Previous
+          $('.pagination-prev').on('click', function() {
+            if (currentPage > 1) {
+              currentPage--;
+              displayUsersWithPagination(filteredUsers, $('#search-input').val());
+              scrollToTable();
+            }
+          });
+          
+          // Événements Next
+          $('.pagination-next').on('click', function() {
+            if (currentPage < totalPages) {
+              currentPage++;
+              displayUsersWithPagination(filteredUsers, $('#search-input').val());
+              scrollToTable();
+            }
+          });
+          
+          // Événements numéros de page
+          $('.pagination-number').on('click', function() {
+            currentPage = parseInt($(this).data('page'));
+            displayUsersWithPagination(filteredUsers, $('#search-input').val());
+            scrollToTable();
+          });
+          
+          // Animation au survol
+          $('.pagination-number:not(.active)').hover(
+            function() {
+              const page = parseInt($(this).data('page'));
+              const color = getPageColor(page);
+              $(this).css({
+                'background': color + '10',
+                'border-color': color,
+                'color': color,
+                'transform': 'scale(1.1)'
+              });
+            },
+            function() {
+              $(this).css({
+                'background': 'white',
+                'border-color': '#dadce0',
+                'color': '#5f6368',
+                'transform': 'scale(1)'
+              });
+            }
+          );
+        }
+
+        // Obtenir les couleurs pour les pages
+        function getPageColor(page) {
+          const colors = ['#667eea', '#fa709a', '#4facfe', '#43e97b'];
+          return colors[(page - 1) % colors.length];
+        }
+
+        // Scroll vers le tableau
+        function scrollToTable() {
+          $('html, body').animate({
+            scrollTop: $('#users-table').offset().top - 100
+          }, 400);
+        }
+
+        function updateFilterResultsText(filteredCount, totalCount, searchTerm, roleFilter, statusFilter) {
+          let text = '';
+          
+          if (filteredCount === totalCount) {
+            text = `Showing all ${totalCount} users`;
+          } else {
+            text = `Showing ${filteredCount} of ${totalCount} users`;
+            
+            const filters = [];
+            if (searchTerm) filters.push(`search: "${searchTerm}"`);
+            if (roleFilter) filters.push(`role: ${roleFilter}`);
+            if (statusFilter) filters.push(`status: ${statusFilter}`);
+            
+            if (filters.length > 0) {
+              text += ` (filtered by ${filters.join(', ')})`;
+            }
+          }
+          
+          $('#filter-results-text').text(text);
         }
 
         function updateStatistics(users) {
@@ -3097,7 +4527,7 @@ require_once '../../../config.php';
           $('.form-control').removeClass('is-invalid');
         });
         
-        // Dans la partie JavaScript, remplacez la fonction de logout par :
+        // Logout functionality
         $('#logout-link').on('click', function(e) {
             e.preventDefault();
             
@@ -3109,11 +4539,9 @@ require_once '../../../config.php';
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
-                            // CORRECTION : Utiliser window.location.href pour une redirection absolue
                             if (response.redirect) {
                                 window.location.href = response.redirect;
                             } else {
-                                // Fallback vers la page d'accueil
                                 window.location.href = '/user1/view/FutureAi/index.php';
                             }
                         } else {
@@ -3122,13 +4550,80 @@ require_once '../../../config.php';
                     },
                     error: function(xhr, status, error) {
                         console.error('Logout error:', error);
-                        // En cas d'erreur, rediriger quand même
                         window.location.href = '/user1/view/FutureAi/index.php';
                     }
                 });
             }
         });
 
+      });
+      $(document).ready(function() {
+        // Dark Mode Management
+        const darkModeToggle = $('#dark-mode-toggle');
+        const darkModeIcon = $('#dark-mode-icon');
+        const html = $('html');
+        
+        // Vérifier la préférence sauvegardée
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+        
+        // Toggle dark mode
+        darkModeToggle.on('click', function() {
+          const currentTheme = html.attr('data-theme') || 'light';
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          setTheme(newTheme);
+          
+          // Animation de rotation de l'icône
+          darkModeIcon.css('transform', 'rotate(360deg)');
+          setTimeout(() => {
+            darkModeIcon.css('transform', 'rotate(0deg)');
+          }, 300);
+        });
+        
+        function setTheme(theme) {
+          html.attr('data-theme', theme);
+          localStorage.setItem('theme', theme);
+          
+          // Changer l'icône
+          if (theme === 'dark') {
+            darkModeIcon.removeClass('fa-moon').addClass('fa-sun');
+            darkModeToggle.attr('title', 'Switch to Light Mode');
+          } else {
+            darkModeIcon.removeClass('fa-sun').addClass('fa-moon');
+            darkModeToggle.attr('title', 'Switch to Dark Mode');
+          }
+          
+          // Mettre à jour la couleur de la sidebar si elle existe
+          updateSidebarTheme(theme);
+        }
+        
+        function updateSidebarTheme(theme) {
+          const sidebar = $('.sidebar');
+          if (sidebar.length > 0) {
+            if (theme === 'dark') {
+              sidebar.attr('data-background-color', 'dark2');
+            } else {
+              sidebar.attr('data-background-color', 'dark');
+            }
+          }
+        }
+        
+        // Détecter la préférence système (optionnel)
+        if (window.matchMedia) {
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+          
+          // Si aucune préférence sauvegardée, utiliser la préférence système
+          if (!localStorage.getItem('theme')) {
+            setTheme(systemPrefersDark.matches ? 'dark' : 'light');
+          }
+          
+          // Écouter les changements de préférence système
+          systemPrefersDark.addListener((e) => {
+            if (!localStorage.getItem('theme')) {
+              setTheme(e.matches ? 'dark' : 'light');
+            }
+          });
+        }
       });
     </script>
   </body>
