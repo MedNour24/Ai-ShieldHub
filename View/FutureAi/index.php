@@ -1,15 +1,32 @@
 <?php
-session_start();
-
-// Inclure la configuration
+// 1. Inclure config
 require_once '../../config.php';
+// 2. Démarrer session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Connexion à la base de données
-try {
-    $database = new Database();
-    $pdo = $database->getConnection();
-} catch(PDOException $e) {
-    $db_error = "Erreur de connexion à la base de données";
+// 3. Fonctions nécessaires
+function isLoggedIn() {
+    return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+}
+
+function isAdmin() {
+    return isLoggedIn() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
+}
+
+function redirect($url) {
+    header("Location: " . $url);
+    exit();
+}
+
+// 4. Si déjà connecté, rediriger
+if (isLoggedIn()) {
+    if (isAdmin()) {
+        redirect('../back/kaiadmin-lite-1.2.0/index.php');
+    } else {
+        redirect('index2.php');
+    }
 }
 ?>
 <!DOCTYPE html>
