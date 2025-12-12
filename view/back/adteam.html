@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Management - Administration</title>
+  
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-bg: #f8f9fa;
+      --dark-text: #212529;
+      --border-color: #dee2e6;
+      --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--light-bg);
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Cards */
+    .card {
+      box-shadow: var(--shadow-md);
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background-color: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .card-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.15rem;
+      margin: 0;
+      color: var(--dark-text);
+    }
+
+    /* Filter Section */
+    .filter-section {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+    }
+
+    .search-input-wrapper i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      z-index: 10;
+    }
+
+    .search-input-wrapper input {
+      padding-left: 42px;
+    }
+
+    /* Forms */
+    .form-control, .form-select {
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 0.625rem 0.875rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    /* Badges */
+    .badge-category {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-block;
+    }
+
+    .badge-amateur {
+      background-color: #d4f4dd;
+      color: #0d7a4a;
+    }
+
+    .badge-semi-pro {
+      background-color: #fff3cd;
+      color: #cc7000;
+    }
+
+    .badge-professional, .badge-professionnel {
+      background-color: #f8d7da;
+      color: #9e1616;
+    }
+
+    .badge-junior {
+      background-color: #cfe2ff;
+      color: #084298;
+    }
+
+    .badge-senior {
+      background-color: #e7e7e7;
+      color: #495057;
+    }
+
+    .badge-status {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-full {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .badge-open {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .team-tag {
+      color: #9B177E;
+      padding: 5px 14px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      display: inline-block;
+      letter-spacing: 0.5px;
+    }
+
+    /* Stats Badges */
+    .stats-badge {
+      background: #e7f3ff;
+      color: #0d6efd;
+      padding: 6px 14px;
+      border-radius: 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Table */
+    .table {
+      margin-bottom: 0;
+    }
+
+    .table > thead {
+      border-bottom: 2px solid var(--border-color);
+      background-color: #f8f9fa;
+    }
+
+    .table th {
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #495057;
+      padding: 1rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    .table td {
+      padding: 0.875rem 0.75rem;
+      vertical-align: middle;
+    }
+
+    .table tbody tr:not(.pagination-row) {
+      transition: background-color 0.15s ease-in-out;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .table tbody tr:not(.pagination-row):hover {
+      background-color: #f8f9fa;
+    }
+
+    /* Sortable */
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      transition: background-color 0.2s;
+    }
+
+    .sortable:hover {
+      background-color: #e9ecef !important;
+    }
+
+    .sortable::after {
+      content: '\f0dc';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      margin-left: 6px;
+      opacity: 0.3;
+      font-size: 0.7rem;
+    }
+
+    .sortable.sort-asc::after {
+      content: '\f0de';
+      opacity: 1;
+      color: var(--primary-color);
+    }
+
+    .sortable.sort-desc::after {
+      content: '\f0dd';
+      opacity: 1;
+      color: var(--primary-color);
+    }
+
+    /* Buttons */
+    .btn {
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-weight: 500;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+      border-radius: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border: none;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-info {
+      background-color: var(--info-color);
+      border: none;
+      color: white;
+    }
+
+    .btn-warning {
+      background-color: var(--warning-color);
+      border: none;
+      color: #000;
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      border: none;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      border: none;
+    }
+
+    .btn-light {
+      background-color: #f8f9fa;
+      border: 1px solid var(--border-color);
+      color: #495057;
+    }
+
+    .btn-clear-filters {
+      border: 1px solid var(--border-color);
+      background-color: white;
+    }
+
+    /* Pagination Styles */
+    .pagination-row {
+      background: #f8f9fa !important;
+    }
+    
+    .pagination-row:hover {
+      background: #f8f9fa !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    .pagination-number {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      height: 40px;
+      margin: 0 4px;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid var(--border-color);
+      color: var(--dark-text);
+      font-weight: 600;
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .pagination-number:hover:not(.active) {
+      transform: scale(1.1);
+      background: #e9ecef;
+    }
+    
+    .pagination-number.active {
+      cursor: default;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .pagination-prev,
+    .pagination-next {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 90px;
+      height: 40px;
+      margin: 0 8px;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid var(--border-color);
+      color: var(--dark-text);
+      font-weight: 600;
+      transition: all 0.2s ease-in-out;
+      gap: 6px;
+    }
+    
+    .pagination-prev:hover,
+    .pagination-next:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pagination-next {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .pagination-prev:active,
+    .pagination-next:active,
+    .pagination-number:active {
+      transform: scale(0.95);
+    }
+    
+    .pagination-prev.disabled,
+    .pagination-next.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Animation de transition */
+    #teamTableBody tr:not(.pagination-row) {
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Modals */
+    .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+    }
+
+    .modal-header .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .modal-header .btn-close:hover {
+      opacity: 1;
+    }
+
+    .modal-title {
+      font-weight: 600;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1rem 1.5rem;
+    }
+
+    /* Member Items */
+    .member-item {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--primary-color);
+      font-size: 0.9rem;
+    }
+
+    .member-item strong {
+      color: var(--primary-color);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .member-item small {
+      display: block;
+      color: #6c757d;
+      line-height: 1.6;
+    }
+
+    /* Alerts */
+    .alert {
+      border-radius: 10px;
+      border: none;
+      box-shadow: var(--shadow-sm);
+      padding: 1rem 1.25rem;
+    }
+
+    .notification-toast {
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Loading Spinner */
+    .spinner-border-sm {
+      width: 1rem;
+      height: 1rem;
+      border-width: 0.15em;
+    }
+
+    /* Page Header */
+    .page-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-header h3 {
+      font-weight: 700;
+      color: var(--dark-text);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header h6 {
+      color: #6c757d;
+      font-weight: 400;
+    }
+
+    /* Country Flags */
+    .country-flag {
+      font-size: 1.2rem;
+      margin-right: 4px;
+      color: #000000;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .action-dots {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 18px;
+      color: #6c757d;
+      transition: color 0.2s;
+    }
+
+    .action-dots:hover {
+      color: #000;
+    }
+
+    .dropdown-menu {
+      min-width: 150px;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      border: none;
+      border-radius: 8px;
+    }
+
+    .dropdown-item {
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #495057;
+      transition: background-color 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .dropdown-item i {
+      width: 16px;
+      font-size: 14px;
+    }
+
+    .dropdown-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .dropdown-item.text-danger:hover {
+      background-color: #f8d7da;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #6c757d;
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    /* Team Details */
+    .team-detail h4 {
+      color: var(--dark-text);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .team-detail h6 {
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .team-detail p {
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .team-detail strong {
+      color: #495057;
+    }
+
+    .team-detail hr {
+      margin: 1.5rem 0;
+      opacity: 0.1;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .card-header {
+        padding: 1rem;
+      }
+
+      .filter-section {
+        padding: 1rem;
+      }
+
+      .table-responsive {
+        font-size: 0.875rem;
+      }
+
+      .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .stats-badge {
+        font-size: 0.8rem;
+        padding: 4px 10px;
+      }
+
+      .pagination-number {
+        min-width: 35px !important;
+        height: 35px !important;
+        font-size: 12px !important;
+      }
+      
+      .pagination-prev,
+      .pagination-next {
+        min-width: 70px !important;
+        font-size: 12px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="page-inner">
+    <!-- Page Header -->
+    <div class="page-header d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+      <div>
+        <h3 class="fw-bold mb-2">
+          <i class="fas fa-users-cog me-2"></i>Team Management
+        </h3>
+        <h6 class="opacity-75 mb-2">Manage tournament teams and their members</h6>
+      </div>
+      <div class="ms-md-auto py-2 py-md-0 d-flex gap-2">
+        <button class="btn btn-secondary" id="btnExportJSON">
+          <i class="fas fa-file-code me-2"></i>Export JSON
+        </button>
+        <button class="btn btn-secondary" id="btnExportCSV">
+          <i class="fas fa-file-csv me-2"></i>Export CSV
+        </button>
+        <button class="btn btn-primary" id="btnRefresh">
+          <i class="fas fa-sync-alt me-2"></i>Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Message Container -->
+    <div id="messageContainer"></div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="filter-label">
+            <i class="fas fa-search me-1"></i> Search
+          </label>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" class="form-control" placeholder="Team name, tag, leader..." autocomplete="off">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="filter-label">
+            <i class="fas fa-trophy me-1"></i> Tournament
+          </label>
+          <select id="filterTournoi" class="form-select">
+            <option value="">All tournaments</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="filter-label">
+            <i class="fas fa-layer-group me-1"></i> Category
+          </label>
+          <select id="filterCategory" class="form-select">
+            <option value="">All categories</option>
+            <option value="amateur">Amateur</option>
+            <option value="semi-pro">Semi-Pro</option>
+            <option value="professional">Professional</option>
+            <option value="junior">Junior</option>
+            <option value="senior">Senior</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-secondary w-100 btn-clear-filters" id="btnClearFilters">
+            <i class="fas fa-times me-1"></i> Clear
+          </button>
+        </div>
+      </div>
+      
+      <!-- Statistics -->
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <span class="stats-badge">
+          <i class="fas fa-users"></i>
+          <span id="totalTeams">0</span> teams
+        </span>
+        <span class="stats-badge">
+          <i class="fas fa-user"></i>
+          <span id="totalMembers">0</span> members
+        </span>
+        <span class="stats-badge">
+          <i class="fas fa-check-circle"></i>
+          <span id="fullTeams">0</span> full teams
+        </span>
+        <span class="stats-badge" id="avgMembersContainer" style="display: none;">
+          <i class="fas fa-chart-line"></i>
+          <span id="avgMembers">0</span> members/team
+        </span>
+      </div>
+
+      <!-- Display Count -->
+      <div class="mt-2">
+        <small class="text-muted" id="displayedTeamCount">0 team(s) displayed</small>
+      </div>
+    </div>
+
+    <!-- Teams Table -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-head-row">
+              <div class="card-title">
+                <i class="fas fa-list me-2"></i>Team List
+              </div>
+              <div class="card-tools">
+                <button class="btn btn-sm btn-light" onclick="loadTeams()" title="Refresh">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="id_team">ID</th>
+                    <th class="sortable" data-sort="team_name">Team Name</th>
+                    <th>Tag</th>
+                    <th class="sortable" data-sort="nom_tournoi">Tournament</th>
+                    <th class="sortable" data-sort="category">Category</th>
+                    <th class="sortable" data-sort="country">Country</th>
+                    <th>Leader</th>
+                    <th class="sortable" data-sort="total_members">Members</th>
+                    <th class="sortable" data-sort="created_at">Created</th>
+                    <th class="text-center" style="width: 140px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="teamTableBody">
+                  <tr>
+                    <td colspan="10" class="text-center py-5">
+                      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Loading teams...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Team Modal -->
+  <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detailModalLabel">
+            <i class="fas fa-info-circle me-2"></i>Team Details
+          </h5>
+          <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="detailContent">
+            <div class="text-center py-4">
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+              <p class="mt-2 text-muted">Loading...</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Team Modal -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editModalLabel">
+            <i class="fas fa-edit me-2"></i>Edit Team
+          </h5>
+          <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editTeamForm">
+            <input type="hidden" id="edit_id_team" name="id_team">
+            
+            <div class="mb-3">
+              <label for="edit_id_tournoi" class="form-label">
+                <i class="fas fa-trophy me-1"></i> Tournament
+              </label>
+              <select id="edit_id_tournoi" name="id_tournoi" class="form-select">
+                <option value="">-- Select a tournament --</option>
+              </select>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-8">
+                <label for="edit_team_name" class="form-label">
+                  <i class="fas fa-users me-1"></i> Team Name
+                </label>
+                <input type="text" id="edit_team_name" name="team_name" class="form-control" autocomplete="off">
+              </div>
+              <div class="col-md-4">
+                <label for="edit_team_tag" class="form-label">
+                  <i class="fas fa-tag me-1"></i> Tag
+                </label>
+                <input type="text" id="edit_team_tag" name="team_tag" class="form-control" style="text-transform: uppercase;" maxlength="10" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="edit_country" class="form-label">
+                  <i class="fas fa-globe me-1"></i> Country
+                </label>
+                <select id="edit_country" name="country" class="form-select">
+                  <option value="">-- Select a country --</option>
+                  <option value="Tunisia">Tunisia</option>
+                  <option value="France">France</option>
+                  <option value="Algeria">Algeria</option>
+                  <option value="Morocco">Morocco</option>
+                  <option value="Egypt">Egypt</option>
+                  <option value="Belgium">Belgium</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="Canada">Canada</option>
+                  <option value="USA">United States</option>
+                  <option value="UK">United Kingdom</option>
+                  <option value="Germany">Germany</option>
+                  <option value="Spain">Spain</option>
+                  <option value="Italy">Italy</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="edit_category" class="form-label">
+                  <i class="fas fa-layer-group me-1"></i> Category
+                </label>
+                <select id="edit_category" name="category" class="form-select">
+                  <option value="">-- Select a category --</option>
+                  <option value="amateur">Amateur</option>
+                  <option value="semi-pro">Semi-Pro</option>
+                  <option value="professional">Professional</option>
+                  <option value="junior">Junior</option>
+                  <option value="senior">Senior</option>
+                </select>
+              </div>
+            </div>
+
+            <hr class="my-4">
+            <h6 class="fw-bold mb-3">
+              <i class="fas fa-star me-2 text-warning"></i>Leader Information
+            </h6>
+
+            <div class="mb-3">
+              <label for="edit_leader_name" class="form-label">
+                <i class="fas fa-user me-1"></i> Full Name
+              </label>
+              <input type="text" id="edit_leader_name" name="leader_name" class="form-control" autocomplete="off">
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="edit_leader_email" class="form-label">
+                  <i class="fas fa-envelope me-1"></i> Email
+                </label>
+                <input type="email" id="edit_leader_email" name="leader_email" class="form-control" autocomplete="off">
+              </div>
+              <div class="col-md-6">
+                <label for="edit_leader_phone" class="form-label">
+                  <i class="fas fa-phone me-1"></i> Phone
+                </label>
+                <input type="tel" id="edit_leader_phone" name="leader_phone" class="form-control" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <small>All fields are validated automatically. Errors will appear below each field.</small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Cancel
+          </button>
+          <button type="submit" form="editTeamForm" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script src="team.js"></script>
+</body>
+</html>

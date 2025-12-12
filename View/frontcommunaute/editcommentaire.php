@@ -479,7 +479,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contenu'])) {
                             <i class="fas fa-user"></i>
                         </div>
                         <div>
-                            <div class="comment-author"><?= htmlspecialchars($commentaire['nom']) ?></div>
+                            <div class="comment-author"><?= htmlspecialchars($commentaire['name']) ?></div>
                             <div class="comment-date">
                                 <?= date('M j, Y \a\t g:i A', strtotime($commentaire['date_commentaire'])) ?>
                             </div>

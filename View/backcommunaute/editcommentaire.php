@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Informations sur le commentaire -->
                 <div class="comment-info">
                     <div class="comment-author">
-                        <i class="fas fa-user me-2"></i><?= htmlspecialchars($commentaire['nom']) ?>
+                        <i class="fas fa-user me-2"></i><?= htmlspecialchars($commentaire['name']) ?>
                     </div>
                     <div class="comment-date">
                         <i class="fas fa-calendar me-2"></i><?= date('d/m/Y à H:i', strtotime($commentaire['date_commentaire'])) ?>

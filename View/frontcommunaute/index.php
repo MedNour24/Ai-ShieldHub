@@ -725,7 +725,7 @@
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item"><a class="nav-link" href="./index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="./courses.html">Courses</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/crud-communaute - Copie/View/frontcommunaute/addPublication.php?id_utilisateur=1">Publications</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/Ai-ShieldHub/View/frontcommunaute/addPublication.php?id_utilisateur=1">Publications</a></li>
                     <li class="nav-item"><a class="nav-link" href="./quiz.html">Quiz</a></li>
                     <li class="nav-item"><a class="nav-link" href="./tournament.html">Tournoi</a></li>
                     <li class="nav-item dropdown">

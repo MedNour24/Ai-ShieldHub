@@ -33,9 +33,9 @@ class CommentaireController {
     // Méthode pour récupérer les commentaires d'une publication
     public function getCommentairesByPublication($idPublication) {
         $sql = "SELECT c.id_commentaire as id, c.id_publication, c.id_utilisateur, c.texte as contenu, 
-                       c.date_commentaire, u.nom, u.email 
+                       c.date_commentaire, u.name, u.email 
                 FROM commentaire c 
-                JOIN utilisateur u ON c.id_utilisateur = u.id_utilisateur 
+                JOIN users u ON c.id_utilisateur = u.id
                 WHERE c.id_publication = :id_publication 
                 ORDER BY c.date_commentaire DESC";
         
@@ -72,9 +72,9 @@ class CommentaireController {
     // Méthode pour récupérer un commentaire par son ID
     public function getCommentaireById($idCommentaire) {
         $sql = "SELECT c.id_commentaire as id, c.id_publication, c.id_utilisateur, c.texte as contenu, 
-                       c.date_commentaire, u.nom, u.email 
+                       c.date_commentaire, u.name, u.email 
                 FROM commentaire c 
-                JOIN utilisateur u ON c.id_utilisateur = u.id_utilisateur 
+                JOIN users u ON c.id_utilisateur = u.id
                 WHERE c.id_commentaire = :id_commentaire";
         
         $db = config::getConnexion();

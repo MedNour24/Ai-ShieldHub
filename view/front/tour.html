@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CyberTournament – Tournament List</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="stylesheet" href="tour.css">
+    <link rel="stylesheet" href="rewards.css">
+    <link rel="stylesheet" href="calendar.css">
+
+    <style>
+        /* Filter Toolbar Styles */
+        .filter-toolbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 18px;
+            z-index: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 50px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover {
+            background: rgba(255, 77, 77, 0.3);
+            color: #ff4d4d;
+        }
+
+        .filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .filter-label {
+            color: var(--light);
+            font-weight: 600;
+            margin-right: 5px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .filter-pill {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            color: var(--light);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-pill:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .filter-pill.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+        }
+
+        .filter-pill.level-pill.beginner.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #10b981;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .filter-pill.level-pill.intermediate.active {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-color: #f59e0b;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .filter-pill.level-pill.expert.active {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: #ef4444;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .filter-results {
+            text-align: center;
+            color: var(--light);
+            font-size: 14px;
+            padding: 10px;
+            background: rgba(0, 188, 212, 0.1);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .filter-results #resultsCount {
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* Card animation for filtering */
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card.hidden {
+            display: none !important;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--light);
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .no-results h3 {
+            color: var(--light);
+            margin-bottom: 10px;
+        }
+
+        .no-results p {
+            opacity: 0.7;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-pills {
+                justify-content: center;
+            }
+
+            .filter-pill {
+                font-size: 12px;
+                padding: 8px 15px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .view-toggle {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="animated-bg"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="./index.html">
+                <i class="fas fa-shield-halved me-2"></i>AI ShieldHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="./index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./courses.html">Courses</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./quiz.html">Quiz</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="./tournoi.html">Tournoi</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown"
+                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span>John Doe</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="openProfileModal(); return false;"><i
+                                        class="fas fa-user me-2"></i>My Profile</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="./logout.html"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+        <div class="page-header">
+            <div>
+                <h2><i class="fas fa-trophy me-3"></i>Available Tournaments</h2>
+                <p class="page-subtitle">Challenge yourself in cybersecurity competitions</p>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" id="btnListView" onclick="switchView('list')">
+                    <i class="fas fa-list"></i>
+                    <span>List</span>
+                </button>
+                <button class="view-btn" id="btnCalendarView" onclick="switchView('calendar')">
+                    <i class="fas fa-calendar"></i>
+                    <span>Calendar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Search tournaments by name or theme..." oninput="applyFilters()">
+                <button class="clear-search" id="clearSearch" onclick="clearSearch()" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="filter-pills">
+                <button class="filter-pill active" data-filter="all" onclick="setStatusFilter('all')">
+                    <i class="fas fa-th-large me-1"></i>All
+                </button>
+                <button class="filter-pill" data-filter="open" onclick="setStatusFilter('open')">
+                    <i class="fas fa-check-circle me-1"></i>Open
+                </button>
+                <button class="filter-pill" data-filter="soon" onclick="setStatusFilter('soon')">
+                    <i class="fas fa-clock me-1"></i>Coming Soon
+                </button>
+                <button class="filter-pill" data-filter="closed" onclick="setStatusFilter('closed')">
+                    <i class="fas fa-lock me-1"></i>Closed
+                </button>
+            </div>
+
+            <div class="filter-pills">
+                <span class="filter-label">Level:</span>
+                <button class="filter-pill level-pill active" data-level="all" onclick="setLevelFilter('all')">
+                    All Levels
+                </button>
+                <button class="filter-pill level-pill beginner" data-level="Débutant"
+                    onclick="setLevelFilter('Débutant')">
+                    🟢 Beginner
+                </button>
+                <button class="filter-pill level-pill intermediate" data-level="Intermédiaire"
+                    onclick="setLevelFilter('Intermédiaire')">
+                    🟡 Intermediate
+                </button>
+                <button class="filter-pill level-pill expert" data-level="Expert" onclick="setLevelFilter('Expert')">
+                    🔴 Expert
+                </button>
+            </div>
+
+            <div class="filter-results" id="filterResults">
+                <span id="resultsCount">0</span> tournament(s) found
+            </div>
+        </div>
+
+        <div class="row" id="tournoiList">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p>Loading tournaments...</p>
+            </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div id="calendarView">
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" id="prevMonth">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h3 class="calendar-title" id="calendarTitle">January 2024</h3>
+                <button class="calendar-nav-btn" id="nextMonth">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="calendar-grid">
+                <!-- Day Headers -->
+                <div class="calendar-day-header">Sun</div>
+                <div class="calendar-day-header">Mon</div>
+                <div class="calendar-day-header">Tue</div>
+                <div class="calendar-day-header">Wed</div>
+                <div class="calendar-day-header">Thu</div>
+                <div class="calendar-day-header">Fri</div>
+                <div class="calendar-day-header">Sat</div>
+            </div>
+            <!-- Days will be populated by JS -->
+            <div id="calendarGrid" class="calendar-grid" style="margin-top: 10px;"></div>
+        </div>
+    </main>
+
+    <!-- Tournament Detail Modal -->
+    <div id="tournamentModal" class="tournament-modal">
+        <div class="tournament-modal-content">
+            <div class="tournament-modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close-btn" onclick="closeTournamentModal()">&times;</button>
+            </div>
+            <div class="tournament-modal-body" id="modalBody">
+                <!-- Content will be populated dynamically -->
+            </div>
+            <div class="tournament-modal-footer">
+                <button class="btn-secondary-modal" onclick="closeTournamentModal()">Close</button>
+                <button class="btn-primary-modal" id="modalJoinBtn">Join Tournament</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit me-2"></i>Edit Profile</h2>
+                <button class="close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-photo-section">
+                    <div class="profile-photo-wrapper">
+                        <div class="profile-photo" id="modalProfilePhoto">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <label for="photoInput" class="photo-upload-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                    </div>
+                    <p class="photo-hint">Click the camera icon to change your profile photo</p>
+                </div>
+
+                <form id="profileForm" onsubmit="saveProfile(event)">
+                    <div class="form-group">
+                        <label for="fullName"><i class="fas fa-user me-2"></i>Full Name</label>
+                        <input type="text" id="fullName" name="fullName" placeholder="Enter your full name"
+                            value="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email"
+                            value="john.doe@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock me-2"></i>New Password</label>
+                        <input type="password" id="password" name="password"
+                            placeholder="Leave blank to keep current password">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword"><i class="fas fa-lock me-2"></i>Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword"
+                            placeholder="Confirm your new password">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
+                <button class="btn-save" onclick="document.getElementById('profileForm').requestSubmit()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Chat Widget -->
+    <div class="ai-chat-widget">
+        <button class="ai-chat-button" id="aiChatBtn" onclick="toggleChat()">
+            🤖
+        </button>
+
+        <div class="ai-chat-container" id="aiChatContainer">
+            <div class="ai-chat-header">
+                <div>
+                    <h3>🏆 Tournament Assistant</h3>
+                    <small>Ask me anything about tournaments!</small>
+                </div>
+                <button class="ai-close-btn" onclick="toggleChat()">×</button>
+            </div>
+
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-message assistant">
+                    <div class="ai-message-content"><strong>🏆 Tournament Assistant</strong>
+
+                        Ask quick questions about:
+
+                        ▸ Rules & Formats
+                        ▸ Registration
+                        ▸ Scoring
+                        ▸ Team Setup
+
+                        Go ahead! 🚀</div>
+                </div>
+            </div>
+
+            <div class="ai-loading" id="aiLoading">Assistant is thinking</div>
+
+            <div class="ai-quick-questions">
+                <button class="ai-quick-btn" onclick="sendQuickQuestion('How do tournaments work?')">
+                    📋 Tournament Basics
+                </button>
+                <button class="ai-quick-btn" onclick="sendQuickQuestion('How to register for a tournament?')">
+                    ✍️ Registration
+                </button>
+                <button class="ai-quick-btn" onclick="sendQuickQuestion('What are the rules?')">
+                    📜 Rules
+                </button>
+            </div>
+
+            <div class="ai-chat-input-area">
+                <div class="ai-input-wrapper">
+                    <input type="text" class="ai-chat-input" id="aiChatInput" placeholder="Ask something quick..."
+                        onkeypress="handleAIKeyPress(event)" />
+                    <button class="ai-send-btn" id="aiSendBtn" onclick="sendAIMessage()">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="footer-brand">
+                        <i class="fas fa-shield-halved me-2"></i>AI ShieldHub
+                    </div>
+                    <p class="footer-desc">Empowering students with AI-powered cybersecurity education for a safer
+                        digital future.
+                    </p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5>Platform</h5>
+                    <a href="./courses.html">Courses</a>
+                    <a href="./community.html">Community</a>
+                    <a href="./tools.html">Tools</a>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5>Resources</h5>
+                    <a href="./blog.html">Blog</a>
+                    <a href="./docs.html">Documentation</a>
+                    <a href="./faq.html">FAQ</a>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5>Company</h5>
+                    <a href="./about.html">About Us</a>
+                    <a href="./contact.html">Contact</a>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5>Legal</h5>
+                    <a href="./privacy.html">Privacy Policy</a>
+                    <a href="./terms.html">Terms of Service</a>
+                </div>
+            </div>
+
+            <div class="copyright">
+                <p class="mb-0">© 2024 AI ShieldHub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="rewards.js"></script>
+    <script src="calendar.js"></script>
+    <script>
+        // Tournament List Script with Filtering Support
+        const API_URL = 'tournoi_handler.php';
+        let allTournaments = [];
+        let aiConversationHistory = [];
+
+        // Filter state
+        let currentStatusFilter = 'all';
+        let currentLevelFilter = 'all';
+        let currentSearchQuery = '';
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTournois();
+            initCalendar();
+        });
+
+        // Load Tournaments from API
+        async function loadTournois() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+
+                console.log('API Response:', result);
+
+                const container = document.getElementById('tournoiList');
+
+                if (result.success && result.data.length > 0) {
+                    allTournaments = result.data;
+                    displayTournaments(allTournaments);
+                    applyFilters(); // Apply initial filter
+                } else {
+                    container.innerHTML = `
+            <div class="loading-container">
+              <i class="fas fa-trophy" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
+              <p style="color: var(--light); font-size: 18px;">No tournaments available at the moment</p>
+              <p style="color: var(--light); opacity: 0.7; font-size: 14px;">Check back soon for exciting challenges!</p>
+            </div>
+          `;
+                }
+            } catch (error) {
+                console.error('Error loading tournaments:', error);
+                document.getElementById('tournoiList').innerHTML = `
+          <div class="loading-container">
+            <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: var(--warning); margin-bottom: 20px;"></i>
+            <p style="color: var(--light); font-size: 18px;">Error loading tournaments</p>
+            <p style="color: var(--light); opacity: 0.7; font-size: 14px;">${error.message}</p>
+            <button class="btn btn-primary-custom" style="max-width: 200px; margin: 20px auto;" onclick="loadTournois()">
+              <i class="fas fa-redo me-2"></i>Retry
+            </button>
+          </div>
+        `;
+            }
+        }
+
+        // Display Tournaments
+        function displayTournaments(tournaments) {
+            const container = document.getElementById('tournoiList');
+
+            container.innerHTML = tournaments.map(t => {
+                const status = getStatus(t.date_debut, t.date_fin);
+                const badge = getBadge(status);
+
+                // Determine button state based on status
+                let btnClass, btnText, btnDisabled;
+                if (status === 'soon') {
+                    btnClass = 'btn-disabled';
+                    btnText = 'Coming Soon';
+                    btnDisabled = 'disabled';
+                } else if (status === 'closed') {
+                    btnClass = 'btn-disabled';
+                    btnText = 'Closed';
+                    btnDisabled = 'disabled';
+                } else {
+                    btnClass = 'btn-primary-custom';
+                    btnText = 'Join Now';
+                    btnDisabled = '';
+                }
+
+                // Image handling with fallback
+                let imageHtml;
+                if (t.image && t.image.trim() !== '') {
+                    imageHtml = `
+            <img src="${escapeHtml(t.image)}" 
+                 alt="${escapeHtml(t.nom)}" 
+                 class="tournament-image"
+                 onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="tournament-image-placeholder" style="display:none;">
+              <i class="fas fa-trophy"></i>
+            </div>
+          `;
+                } else {
+                    imageHtml = `
+            <div class="tournament-image-placeholder">
+              <i class="fas fa-trophy"></i>
+            </div>
+          `;
+                }
+
+                // Description with truncation
+                const description = t.description || 'No description available for this tournament.';
+                const truncatedDesc = truncateText(description, 120);
+
+                return `
+          <div class="card" data-id="${t.id}" data-status="${status}" data-level="${escapeHtml(t.niveau)}" data-name="${escapeHtml(t.nom.toLowerCase())}" data-theme="${escapeHtml(t.theme.toLowerCase())}">
+            <div class="card-body">
+              ${imageHtml}
+              
+              <h5 class="card-title" onclick="openTournamentModal(${t.id})">
+                ${escapeHtml(t.nom)}
+              </h5>
+              
+              <div class="tournament-description">
+                ${escapeHtml(truncatedDesc)}
+              </div>
+              
+              ${description.length > 120 ? `
+                <a href="#" class="read-more-link" onclick="event.preventDefault(); openTournamentModal(${t.id})">
+                  Read more <i class="fas fa-arrow-right"></i>
+                </a>
+              ` : ''}
+              
+              <div class="card-text" style="margin-top: 20px;">
+                <div class="card-info-item">
+                  <i class="fas fa-tag"></i>
+                  <span><strong>Theme:</strong> ${escapeHtml(t.theme)}</span>
+                </div>
+                <div class="card-info-item">
+                  <i class="fas fa-layer-group"></i>
+                  <span><strong>Level:</strong> ${getNiveauBadge(t.niveau)}</span>
+                </div>
+                <div class="card-info-item">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span><strong>Duration:</strong> ${formatDateRange(t.date_debut, t.date_fin)}</span>
+                </div>
+              </div>
+              
+            <div class="card-footer">
+                <div class="card-info">
+                  ${badge}
+                  <small><i class="fas fa-users me-1"></i>${getInfo(status, t.id)}</small>
+                </div>
+                <button class="btn ${btnClass}" ${btnDisabled} onclick="joinTournament(${t.id})">
+                  <i class="fas fa-sign-in-alt me-2"></i>${btnText}
+                </button>
+              </div>
+              
+              ${generateRewardsPreview(t)}
+            </div>
+          </div>
+        `;
+            }).join('');
+            // Initialize tooltips after rendering cards
+            setTimeout(initializeTooltips, 100);
+
+        }
+
+        // Filter Functions
+        function setStatusFilter(status) {
+            currentStatusFilter = status;
+
+            // Update active state
+            document.querySelectorAll('.filter-pill[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.filter-pill[data-filter="${status}"]`).classList.add('active');
+
+            applyFilters();
+        }
+
+        function setLevelFilter(level) {
+            currentLevelFilter = level;
+
+            // Update active state
+            document.querySelectorAll('.filter-pill[data-level]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.filter-pill[data-level="${level}"]`).classList.add('active');
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            currentSearchQuery = searchInput.value.toLowerCase().trim();
+
+            // Show/hide clear button
+            clearBtn.style.display = currentSearchQuery ? 'flex' : 'none';
+
+            const cards = document.querySelectorAll('.card[data-id]');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardStatus = card.getAttribute('data-status');
+                const cardLevel = card.getAttribute('data-level');
+                const cardName = card.getAttribute('data-name');
+                const cardTheme = card.getAttribute('data-theme');
+
+                // Check status filter
+                const statusMatch = currentStatusFilter === 'all' || cardStatus === currentStatusFilter;
+
+                // Check level filter
+                const levelMatch = currentLevelFilter === 'all' || cardLevel === currentLevelFilter;
+
+                // Check search query
+                const searchMatch = !currentSearchQuery ||
+                    cardName.includes(currentSearchQuery) ||
+                    cardTheme.includes(currentSearchQuery);
+
+                // Show/hide card
+                if (statusMatch && levelMatch && searchMatch) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Update results count
+            document.getElementById('resultsCount').textContent = visibleCount;
+
+            // Show no results message if needed
+            const container = document.getElementById('tournoiList');
+            let noResultsDiv = container.querySelector('.no-results');
+
+            if (visibleCount === 0 && allTournaments.length > 0) {
+                if (!noResultsDiv) {
+                    noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'no-results col-12';
+                    noResultsDiv.innerHTML = `
+            <i class="fas fa-search"></i>
+            <h3>No tournaments found</h3>
+            <p>Try adjusting your filters or search query</p>
+          `;
+                    container.appendChild(noResultsDiv);
+                }
+            } else if (noResultsDiv) {
+                noResultsDiv.remove();
+            }
+
+            // Update calendar if in calendar view
+            if (currentView === 'calendar') {
+                renderCalendar();
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        }
+
+        // Open Tournament Detail Modal
+        function openTournamentModal(id) {
+            const tournament = allTournaments.find(t => t.id === id);
+            if (!tournament) return;
+
+            const modal = document.getElementById('tournamentModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const modalJoinBtn = document.getElementById('modalJoinBtn');
+
+            const status = getStatus(tournament.date_debut, tournament.date_fin);
+            const badge = getBadge(status);
+
+            modalTitle.innerHTML = `<i class="fas fa-trophy me-2"></i>${escapeHtml(tournament.nom)}`;
+
+            modalBody.innerHTML = `
+        ${tournament.image ? `
+          <img src="${escapeHtml(tournament.image)}" alt="${escapeHtml(tournament.nom)}" class="modal-image">
+        ` : ''}
+        
+        <div class="modal-section">
+          <div class="modal-section-title">
+            <i class="fas fa-info-circle"></i>
+            About This Tournament
+          </div>
+          <div class="modal-section-content">
+            ${escapeHtml(tournament.description || 'No description available for this tournament.')}
+          </div>
+        </div>
+        
+        <div class="modal-section">
+          <div class="modal-section-title">
+            <i class="fas fa-list-ul"></i>
+            Tournament Details
+          </div>
+          <div class="modal-info-grid">
+            <div class="modal-info-item">
+              <div class="modal-info-label">Theme</div>
+              <div class="modal-info-value">${escapeHtml(tournament.theme)}</div>
+            </div>
+            <div class="modal-info-item">
+              <div class="modal-info-label">Difficulty Level</div>
+              <div class="modal-info-value">${getNiveauBadge(tournament.niveau)}</div>
+            </div>
+            <div class="modal-info-item">
+              <div class="modal-info-label">Start Date</div>
+              <div class="modal-info-value">${formatDate(tournament.date_debut)}</div>
+            </div>
+            <div class="modal-info-item">
+              <div class="modal-info-label">End Date</div>
+              <div class="modal-info-value">${formatDate(tournament.date_fin)}</div>
+            </div>
+            <div class="modal-info-item">
+              <div class="modal-info-label">Status</div>
+              <div class="modal-info-value">${badge}</div>
+            </div>
+            <div class="modal-info-item">
+              <div class="modal-info-label">Participants</div>
+              <div class="modal-info-value">${getInfo(status, tournament.id)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+            // Update join button
+            if (status === 'soon') {
+                modalJoinBtn.className = 'btn-primary-modal btn-disabled';
+                modalJoinBtn.innerHTML = '<i class="fas fa-clock me-2"></i>Coming Soon';
+                modalJoinBtn.disabled = true;
+            } else if (status === 'closed') {
+                modalJoinBtn.className = 'btn-primary-modal btn-disabled';
+                modalJoinBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Closed';
+                modalJoinBtn.disabled = true;
+            } else {
+                modalJoinBtn.className = 'btn-primary-modal';
+                modalJoinBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Join Tournament';
+                modalJoinBtn.disabled = false;
+                modalJoinBtn.onclick = () => joinTournament(tournament.id);
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close Tournament Modal
+        function closeTournamentModal() {
+            const modal = document.getElementById('tournamentModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Join Tournament - UPDATED TO REDIRECT TO TEAM PAGE
+        function joinTournament(id) {
+            const tournament = allTournaments.find(t => t.id === id);
+            if (tournament) {
+                // Redirect to team.html with tournament ID as URL parameter
+                window.location.href = `team.html?tournoi=${id}`;
+            }
+        }
+
+        // Helper Functions
+        function getStatus(dateDebut, dateFin) {
+            const now = new Date();
+            const start = new Date(dateDebut);
+            const end = new Date(dateFin);
+
+            // Set time to start of day for comparison
+            now.setHours(0, 0, 0, 0);
+            start.setHours(0, 0, 0, 0);
+            end.setHours(0, 0, 0, 0);
+
+            if (now < start) return 'soon';
+            if (now >= start && now <= end) return 'open';
+            return 'closed';
+        }
+
+        function getBadge(status) {
+            const badges = {
+                'open': '<span class="badge-open">✓ Open</span>',
+                'soon': '<span class="badge-soon">⏰ Coming Soon</span>',
+                'closed': '<span class="badge-closed">🔒 Closed</span>'
+            };
+            return badges[status] || badges['open'];
+        }
+
+        function getNiveauBadge(niveau) {
+            const badges = {
+                'Débutant': '<span class="badge-level badge-beginner">🟢 Beginner</span>',
+                'Intermédiaire': '<span class="badge-level badge-intermediate">🟡 Intermediate</span>',
+                'Expert': '<span class="badge-level badge-expert">🔴 Expert</span>'
+            };
+            return badges[niveau] || `<span class="badge-level">${escapeHtml(niveau)}</span>`;
+        }
+
+        function getInfo(status, id) {
+            const infos = {
+                'open': `${Math.floor(Math.random() * 50) + 20} joined`,
+                'soon': `${Math.floor(Math.random() * 15) + 5} interested`,
+                'closed': `Tournament ended`
+            };
+            return infos[status] || infos['open'];
+        }
+
+        function formatDate(dateStr) {
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            return new Date(dateStr).toLocaleDateString('en-US', options);
+        }
+
+        function formatDateRange(start, end) {
+            return `${formatDate(start)} - ${formatDate(end)}`;
+        }
+
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength).trim() + '...';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Profile Modal Functions
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onclick = function (event) {
+            const profileModal = document.getElementById('profileModal');
+            const tournamentModal = document.getElementById('tournamentModal');
+
+            if (event.target === profileModal) {
+                closeProfileModal();
+            }
+            if (event.target === tournamentModal) {
+                closeTournamentModal();
+            }
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const photoDiv = document.getElementById('modalProfilePhoto');
+                    photoDiv.style.backgroundImage = `url(${e.target.result})`;
+                    photoDiv.style.backgroundSize = 'cover';
+                    photoDiv.style.backgroundPosition = 'center';
+                    photoDiv.innerHTML = '';
+
+                    const navProfileDiv = document.querySelector('.profile-avatar');
+                    if (navProfileDiv) {
+                        navProfileDiv.style.backgroundImage = `url(${e.target.result})`;
+                        navProfileDiv.style.backgroundSize = 'cover';
+                        navProfileDiv.style.backgroundPosition = 'center';
+                        navProfileDiv.innerHTML = '';
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveProfile(event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password && password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            if (password && password.length < 8) {
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+
+            const navName = document.querySelector('.nav-link.dropdown-toggle span');
+            if (navName) {
+                navName.textContent = fullName;
+            }
+
+            alert('✅ Profile updated successfully!');
+            closeProfileModal();
+
+            console.log('Profile data:', { fullName, email, password: password ? '***' : 'unchanged' });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeProfileModal();
+                closeTournamentModal();
+            }
+        });
+
+        // AI Assistant Functions
+        function toggleChat() {
+            const container = document.getElementById('aiChatContainer');
+            const button = document.getElementById('aiChatBtn');
+
+            container.classList.toggle('open');
+            button.classList.toggle('active');
+
+            if (container.classList.contains('open')) {
+                document.getElementById('aiChatInput').focus();
+            }
+        }
+
+        function addAIMessage(content, role) {
+            const messagesContainer = document.getElementById('aiChatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `ai-message ${role}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'ai-message-content';
+
+            if (role === 'assistant') {
+                let formatted = content
+                    .replace(/\[\d+\]/g, '')
+                    .replace(/\[(\d+)\]\[(\d+)\]/g, '')
+                    .replace(/### (.*?)(?:\n|$)/g, '<h4>$1</h4>')
+                    .replace(/\n\n/g, '<br><br>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^• /gm, '▸ ')
+                    .replace(/^- /gm, '▸ ')
+                    .replace(/✅/g, '<span style="color: #10b981;">✅</span>')
+                    .replace(/⚠️/g, '<span style="color: #f59e0b;">⚠️</span>');
+                contentDiv.innerHTML = formatted;
+            } else {
+                contentDiv.textContent = content;
+            }
+
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+
+            if (role === 'user') {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } else {
+                setTimeout(() => {
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('aiChatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            input.disabled = true;
+            document.getElementById('aiSendBtn').disabled = true;
+            document.getElementById('aiLoading').classList.add('active');
+
+            addAIMessage(message, 'user');
+            input.value = '';
+
+            try {
+                const response = await fetch('api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: aiConversationHistory
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    addAIMessage(data.content, 'assistant');
+                    aiConversationHistory.push({ role: 'user', content: message });
+                    aiConversationHistory.push({ role: 'assistant', content: data.content });
+                } else {
+                    addAIMessage('❌ Error: ' + (data.error || 'An error occurred'), 'assistant');
+                }
+            } catch (error) {
+                console.error('AI Error:', error);
+                addAIMessage('❌ Connection error. Error: ' + error.message, 'assistant');
+            } finally {
+                input.disabled = false;
+                document.getElementById('aiSendBtn').disabled = false;
+                document.getElementById('aiLoading').classList.remove('active');
+                input.focus();
+            }
+        }
+
+        function sendQuickQuestion(text) {
+            document.getElementById('aiChatInput').value = text;
+            sendAIMessage();
+        }
+
+        function handleAIKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendAIMessage();
+            }
+        }
+    </script>
+</body>
+
+</html>
