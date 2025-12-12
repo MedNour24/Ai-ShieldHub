@@ -432,7 +432,7 @@ if (isset($_GET['confirm']) && $_GET['confirm'] === 'yes') {
                             <i class="fas fa-user"></i>
                         </div>
                         <div style="flex: 1;">
-                            <div class="comment-author"><?= htmlspecialchars($commentaire['nom']) ?></div>
+                            <div class="comment-author"><?= htmlspecialchars($commentaire['name']) ?></div>
                             <div class="comment-date">
                                 <?= date('M j, Y \a\t g:i A', strtotime($commentaire['date_commentaire'])) ?>
                             </div>

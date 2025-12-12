@@ -73,7 +73,7 @@ class config
         }
     }
 }
-?>
+
 // class config
 // {   private static $pdo = null;
 //     public static function getConnexion()
@@ -101,4 +101,4 @@ class config
 //     }
 // }
 // config::getConnexion();
-// ?>
+?>

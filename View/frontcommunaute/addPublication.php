@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../Model/Reaction.php';
 // ID utilisateur connecté
 $idUser = isset($_GET['id_utilisateur']) ? intval($_GET['id_utilisateur']) : 0;
 if ($idUser <= 0) die("ID utilisateur non spécifié !");
-
+$userName = $_SESSION['user_name'] ?? 'Student';
 // Instanciation des contrôleurs
 $pubController = new PublicationController();
 $commentController = new CommentaireController();
@@ -1173,15 +1173,14 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item"><a class="nav-link" href="./index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="./courses.html">Courses</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/crud-communaute - Copie/View/frontcommunaute/addPublication.php?id_utilisateur=1">Publications</a></li>
-                    <li class="nav-item"><a class="nav-link" href="./quiz.html">Quiz</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/Ai-shieldhub/View/frontcommunaute/addPublication.php?id_utilisateur=<?= $userId ?>">Publications</a></li>                    <li class="nav-item"><a class="nav-link" href="./quiz.html">Quiz</a></li>
                     <li class="nav-item"><a class="nav-link" href="./tournament.html">Tournoi</a></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; margin-right: 8px;">
                                 <i class="fas fa-user" style="font-size: 16px;"></i>
                             </div>
-                            <span>John Doe</span>
+                             <span><?php echo htmlspecialchars($userName); ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(99, 102, 241, 0.3);">
                             <li><a class="dropdown-item" href="#" onclick="openProfileModal(); return false;" style="color: var(--light);"><i class="fas fa-user me-2"></i>My Profile</a></li>
@@ -1233,7 +1232,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                     <i class="fas fa-user"></i>
                                 </div>
                                 <div>
-                                    <div class="publication-author"><?= htmlspecialchars($p['nom']) ?></div>
+                                    <div class="publication-author"><?= htmlspecialchars($p['name']) ?></div>
                                     <div class="publication-date"><?= date('M j, Y \a\t g:i A', strtotime($p['date_publication'])) ?></div>
                                 </div>
                             </div>
@@ -1314,7 +1313,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                                     <i class="fas fa-user"></i>
                                                 </div>
                                                 <div class="comment-preview-author">
-                                                    <?= htmlspecialchars($comment['nom']) ?>
+                                                    <?= htmlspecialchars($comment['name']) ?>
                                                 </div>
                                                 <div class="comment-preview-date">
                                                     <?= date('M j, Y', strtotime($comment['date_commentaire'])) ?>
@@ -1421,7 +1420,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                     <i class="fas fa-user"></i>
                                 </div>
                                 <div>
-                                    <div class="publication-author"><?= htmlspecialchars($f['nom']) ?></div>
+                                    <div class="publication-author"><?= htmlspecialchars($f['name']) ?></div>
                                     <div class="publication-date"><?= date('M j, Y \a\t g:i A', strtotime($f['date_publication'])) ?></div>
                                 </div>
                             </div>
@@ -1485,7 +1484,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                                     <i class="fas fa-user"></i>
                                                 </div>
                                                 <div class="comment-preview-author">
-                                                    <?= htmlspecialchars($comment['nom']) ?>
+                                                    <?= htmlspecialchars($comment['name']) ?>
                                                 </div>
                                                 <div class="comment-preview-date">
                                                     <?= date('M j, Y', strtotime($comment['date_commentaire'])) ?>

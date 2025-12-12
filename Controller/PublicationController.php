@@ -38,9 +38,9 @@ class PublicationController {
 
     // Récupérer une publication par ID
     public function getPublicationById($id_publication) {
-        $sql = "SELECT p.*, u.nom 
+        $sql = "SELECT p.*, u.name 
                 FROM publication p
-                JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
+                JOIN users u ON p.id_utilisateur = u.id
                 WHERE p.id_publication = :id";
         $db = config::getConnexion();
         $query = $db->prepare($sql);
@@ -121,11 +121,11 @@ class PublicationController {
     public function getFilIntelligent($mode = 'recent') {
         $db = config::getConnexion();
 
-        $sql = "SELECT p.*, u.nom,
+        $sql = "SELECT p.*, u.name,
                        (SELECT COUNT(*) FROM reaction r WHERE r.id_publication = p.id_publication AND r.type_reaction = 'like') AS nb_likes,
                        (SELECT COUNT(*) FROM commentaire c WHERE c.id_publication = p.id_publication) AS nb_commentaires
                 FROM publication p
-                JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur ";
+                JOIN users u ON p.id_utilisateur = u.id ";
 
         switch ($mode) {
             case 'recent':
@@ -161,9 +161,9 @@ class PublicationController {
 
     // Récupérer toutes les publications de l'utilisateur (avec pagination)
     public function listUserPublications($idUser, $limit = null, $offset = null) {
-        $sql = "SELECT p.*, u.nom 
+        $sql = "SELECT p.*, u.name 
                 FROM publication p
-                JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
+                JOIN users u ON p.id_utilisateur = u.id
                 WHERE p.id_utilisateur = :idUser
                 ORDER BY p.id_publication DESC";
 
@@ -207,9 +207,9 @@ class PublicationController {
 
     // Feed global
     public function listAllPublications($limit = 5, $offset = 0) {
-        $sql = "SELECT p.*, u.nom 
+        $sql = "SELECT p.*, u.name 
                 FROM publication p
-                JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
+                -- JOIN users u ON p.id_utilisateur = u.id
                 ORDER BY id_publication DESC
                 LIMIT :limit OFFSET :offset";
 
@@ -225,9 +225,9 @@ class PublicationController {
 
     // Récupérer les publications des administrateurs
     public function listAdminPublications($limit = 5, $offset = 0) {
-        $sql = "SELECT p.*, u.nom 
+        $sql = "SELECT p.*, u.name 
                 FROM publication p
-                JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
+                JOIN users u ON p.id_utilisateur = u.id
                 WHERE u.role = 'admin'
                 ORDER BY p.id_publication DESC
                 LIMIT :limit OFFSET :offset";
@@ -242,10 +242,10 @@ class PublicationController {
 
     // Récupérer les publications des utilisateurs (pour le backoffice)
     public function listUserPublicationsBack($limit, $offset) {
-        $sql = "SELECT p.*, u.nom, u.email 
+        $sql = "SELECT p.*, u.name, u.email 
                 FROM publication p
-                JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
-                WHERE u.role = 'user'
+                JOIN users u ON p.id_utilisateur = u.id
+                WHERE u.role = 'student'
                 ORDER BY p.id_publication DESC
                 LIMIT :limit OFFSET :offset";
 

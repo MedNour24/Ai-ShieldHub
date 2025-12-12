@@ -12,7 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
         $_SESSION['initiated'] = true;
     }
 }
-
+$userId = $_SESSION['user_id'] ?? 0;
 // ==================== VOS FONCTIONS ====================
 
 function isLoggedIn() {
@@ -2029,16 +2029,22 @@ body, .card, .table, .modal-content, .form-control,
               <li class="nav-item">
                 <a data-bs-toggle="collapse" href="#maps">
                   <i class="fas fa-map-marker-alt"></i>
-                  <p>Maps</p>
+                  <p>Publications</p>
                   <span class="caret"></span>
                 </a>
                 <div class="collapse" id="maps">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a href="#">
-                        <span class="sub-item">Google Maps</span>
-                      </a>
+                      <a href="/Ai-shieldhub/View/backcommunaute/addPublications.php?id_utilisateur=<?= $userId ?>">
+    <span class="sub-item">PubAdmin</span>
+</a>
+
                     </li>
+                    <li>
+    <a href="/Ai-shieldhub/View/backcommunaute/addPublication.php?id_utilisateur=<?= $userId ?>" class="nav-link" data-page="pubuser">
+        <span class="sub-item">PubUser</span>
+    </a>
+</li>
                   </ul>
                 </div>
               </li>
