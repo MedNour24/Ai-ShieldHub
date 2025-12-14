@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - AI ShieldHub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            background: var(--darker);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 50%, #1e1b4b 100%);
+        }
+
+        .animated-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-50px, -50px); }
+        }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.3;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-100px) translateX(50px); }
+            50% { transform: translateY(-200px) translateX(-50px); }
+            75% { transform: translateY(-100px) translateX(100px); }
+        }
+
+        /* Header */
+        .navbar {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 20px 0;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-link {
+            color: var(--light) !important;
+            font-weight: 500;
+            padding: 10px 20px !important;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after {
+            width: 60%;
+        }
+
+        /* Quiz Section */
+        .quiz-section {
+            padding: 120px 0 40px;
+            position: relative;
+        }
+
+        .quiz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .quiz-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .quiz-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        .quiz-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .quiz-icon i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .quiz-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        .quiz-card p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .quiz-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .quiz-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-inactive {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .difficulty {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .difficulty-beginner {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        /* Quiz Detail View */
+        .quiz-detail {
+            display: none;
+            padding: 120px 0 40px;
+            position: relative;
+        }
+
+        .quiz-header {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--light);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            transform: translateX(-5px);
+        }
+
+        .questions-container {
+            margin-top: 20px;
+        }
+
+        .question-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .question-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: white;
+            line-height: 1.4;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-item {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            transform: translateX(3px);
+        }
+
+        .option-item.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+        }
+
+        .option-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--primary);
+        }
+
+        .option-item.selected .option-number {
+            background: var(--primary);
+            color: white;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title h6 {
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .section-title h2 {
+            font-size: 36px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .section-title p {
+            color: var(--light);
+            font-size: 16px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Analytics Modal - COMPACT DESIGN */
+        .analytics-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .analytics-modal-content {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            margin: 5% auto;
+            padding: 0;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.4s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .analytics-modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+        }
+
+        .analytics-modal-header h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .analytics-close {
+            color: var(--light);
+            font-size: 24px;
+            font-weight: 300;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: all 0.3s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .analytics-close:hover {
+            color: var(--accent);
+            background: rgba(236, 72, 153, 0.1);
+            transform: rotate(90deg);
+        }
+
+        .analytics-modal-body {
+            padding: 20px;
+        }
+
+        .analytics-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .analytics-stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .analytics-stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .analytics-stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+        }
+
+        .analytics-stat-icon i {
+            font-size: 18px;
+            color: white;
+        }
+
+        .analytics-stat-number {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 3px;
+        }
+
+        .analytics-stat-label {
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Performance Overview Section - COMPACT */
+        .performance-overview {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 12px 0;
+        }
+
+        .performance-overview h4 {
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .performance-badge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .performance-score-display {
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .performance-score {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 3px 0;
+        }
+
+        .performance-message {
+            color: var(--light);
+            font-size: 12px;
+            line-height: 1.3;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        /* Certificate Button */
+        .certificate-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #7c5c00;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .certificate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+
+        .certificate-btn i {
+            font-size: 14px;
+        }
+
+        .analytics-progress-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+        }
+
+        .analytics-progress-section h4 {
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .analytics-progress-bar-container {
+            width: 100%;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .analytics-progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 12px;
+            min-width: 35px;
+        }
+
+        .analytics-progress-fill.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .analytics-progress-fill.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .analytics-progress-fill.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .analytics-scores {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .analytics-score-item {
+            text-align: center;
+        }
+
+        .analytics-score-item .label {
+            color: #94a3b8;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .analytics-score-item .value {
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* Performance Badges - COMPACT */
+        .performance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 12px;
+            margin: 5px 0;
+            animation: badgePulse 2s infinite;
+        }
+
+        .badge-gold {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #7c5c00;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .badge-bronze {
+            background: linear-gradient(135deg, #CD7F32, #8B4513);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
+        }
+
+        .badge-encouragement {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .badge-not-attempted {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+            box-shadow: 0 0 15px rgba(100, 116, 139, 0.3);
+        }
+
+        .badge-zero {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Progress Journal - COMPACT */
+        .progress-section {
+            padding: 60px 0;
+        }
+
+        .progress-journal {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .progress-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-header h3 {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .progress-header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .stat-number {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .progress-timeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .progress-day {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .progress-day:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .progress-day.high {
+            border-left: 3px solid #10b981;
+        }
+
+        .progress-day.medium {
+            border-left: 3px solid #f59e0b;
+        }
+
+        .progress-day.low {
+            border-left: 3px solid #ef4444;
+        }
+
+        .day-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .month {
+            color: #94a3b8;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .date {
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .day-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score {
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .quizzes {
+            color: #94a3b8;
+            font-size: 10px;
+        }
+
+        /* Certificate Modal Styles */
+        .certificate-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .certificate-content {
+    background: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 95%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.5s ease;
+}
+
+       .certificate-header {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    padding: 15px 20px;
+    text-align: center;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.certificate-header h2 {
+    color: #7c5c00;
+    font-size: 20px;
+    font-weight: 900;
+    margin: 0;
+}
+
+.certificate-header p {
+    color: #7c5c00;
+    font-size: 12px;
+    margin: 5px 0 0;
+    opacity: 0.9;
+}
+.certificate-body {
+    padding: 20px;
+    text-align: center;
+    max-height: calc(90vh - 180px);
+    overflow-y: auto;
+}
+
+.certificate-logo {
+    font-size: 36px;
+    color: #FFD700;
+    margin-bottom: 10px;
+}
+
+.certificate-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #333;
+    margin: 10px 0;
+}
+
+.certificate-details {
+    font-size: 14px;
+    color: #666;
+    margin: 5px 0;
+}
+
+.certificate-score {
+    font-size: 28px;
+    font-weight: 900;
+    color: #FFD700;
+    margin: 15px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+.certificate-modal {
+    overflow-y: auto;
+}
+
+        .certificate-date {
+            font-size: 14px;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        .certificate-footer {
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            background: #f8f9fa;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+        .print-btn, .close-certificate-btn, .save-certificate-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 14px;
+        }
+
+        .print-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .save-certificate-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .save-certificate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .close-certificate-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .close-certificate-btn:hover {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+        }
+
+        /* NOUVEAU: Styles pour les notifications toast */
+        .toast-notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease;
+            max-width: 350px;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toast-icon i {
+            font-size: 18px;
+            color: white;
+        }
+        
+        .toast-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toast-message {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        
+        .toast-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        /* AJOUT: Badge "NEW" pour les nouveaux quizzes */
+        .new-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 15px;
+            animation: pulse 2s infinite;
+            z-index: 1;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .section-title h2 {
+                font-size: 28px;
+            }
+
+            .quiz-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .progress-timeline {
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                gap: 8px;
+            }
+            
+            .analytics-stat-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .analytics-stat-card {
+                padding: 10px;
+            }
+            
+            .analytics-stat-number {
+                font-size: 18px;
+            }
+
+            .toast-notification {
+                max-width: 300px;
+                right: 10px;
+                left: 10px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="animated-bg">
+        <div class="particle"
+            style="width: 80px; height: 80px; background: rgba(99, 102, 241, 0.3); top: 20%; left: 10%; animation-delay: 0s;">
+        </div>
+        <div class="particle"
+            style="width: 50px; height: 50px; background: rgba(139, 92, 246, 0.3); top: 60%; left: 80%; animation-delay: 3s;">
+        </div>
+        <div class="particle"
+            style="width: 70px; height: 70px; background: rgba(236, 72, 153, 0.3); top: 80%; left: 20%; animation-delay: 6s;">
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../../index1.html">
+                <i class="fas fa-shield-halved me-2"></i>AI ShieldHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="../../index1.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../courses.html">Courses</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="modulequiz.html">Quiz</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../tournament.html">Tournament</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown"
+                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div
+                                style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; margin-right: 8px;">
+                                <i class="fas fa-user" style="font-size: 14px;"></i>
+                            </div>
+                            <span>John Doe</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown"
+                            style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(99, 102, 241, 0.3);">
+                            <li><a class="dropdown-item" href="#" style="color: var(--light);"><i
+                                        class="fas fa-user me-2"></i>My Profile</a></li>
+                            <li>
+                                <hr class="dropdown-divider" style="border-color: rgba(99, 102, 241, 0.3);">
+                            </li>
+                            <li><a class="dropdown-item" href="../logout.html" style="color: var(--accent);"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Quiz List View -->
+    <div id="quiz-list-view">
+        <section class="quiz-section">
+            <div class="container">
+                <div class="section-title">
+                    <h6><i class="fas fa-fire me-2"></i>AVAILABLE QUIZZES</h6>
+                    <h2>Choose Your Challenge</h2>
+                    <p>Select from our collection of cybersecurity quizzes for all levels</p>
+                </div>
+
+                <div class="quiz-grid" id="quiz-grid">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Loading quizzes...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Progress Journal Section -->
+        <section class="progress-section">
+            <div class="container">
+                <div class="section-title">
+                    <h6><i class="fas fa-chart-line me-2"></i>YOUR PROGRESS</h6>
+                    <h2>Progress Journal</h2>
+                    <p>Track your learning and see how you're improving</p>
+                </div>
+                
+                <div class="progress-journal" id="progress-journal">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Loading your progress...
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Quiz Detail View -->
+    <div id="quiz-detail-view" class="quiz-detail">
+        <div class="container">
+            <button class="back-btn" onclick="showQuizList()">
+                <i class="fas fa-arrow-left"></i> Back to Quizzes
+            </button>
+
+            <div class="quiz-header">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h6><i class="fas fa-shield-alt me-2"></i>QUIZ IN PROGRESS</h6>
+                        <h1 id="detail-title" class="gradient-text">Cybersecurity Basics</h1>
+                        <p id="detail-description" class="lead">Test your fundamental cybersecurity knowledge.</p>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <div class="quiz-meta">
+                            <span class="quiz-status status-active">Active</span>
+                            <span class="difficulty difficulty-beginner">Beginner</span>
+                        </div>
+                        <div class="mt-2" id="timer">
+                            <i class="fas fa-clock me-2"></i>Time: <span id="time-left">30:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="questions-container" id="questions-container">
+                <!-- Questions will be loaded here -->
+            </div>
+
+            <button class="submit-btn" id="submit-quiz" onclick="submitQuiz()">
+                <i class="fas fa-paper-plane me-2"></i>Submit Answers
+            </button>
+        </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div id="analyticsModal" class="analytics-modal">
+        <div class="analytics-modal-content">
+            <div class="analytics-modal-header">
+                <h2><i class="fas fa-chart-bar me-2"></i><span id="analyticsQuizTitle">Quiz Analytics</span></h2>
+                <button class="analytics-close" onclick="closeAnalyticsModal()">&times;</button>
+            </div>
+            <div class="analytics-modal-body">
+                <div class="analytics-stat-grid">
+                    <div class="analytics-stat-card">
+                        <div class="analytics-stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="analytics-stat-number" id="analyticsParticipants">0</div>
+                        <div class="analytics-stat-label">Participants</div>
+                    </div>
+                    
+                    <div class="analytics-stat-card">
+                        <div class="analytics-stat-icon">
+                            <i class="fas fa-redo"></i>
+                        </div>
+                        <div class="analytics-stat-number" id="analyticsAttempts">0</div>
+                        <div class="analytics-stat-label">Attempts</div>
+                    </div>
+                    
+                    <div class="analytics-stat-card">
+                        <div class="analytics-stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="analytics-stat-number" id="analyticsAvgScore">0%</div>
+                        <div class="analytics-stat-label">Avg Score</div>
+                    </div>
+                </div>
+                
+                <!-- Performance Overview Section -->
+                <div class="performance-overview">
+                    <h4><i class="fas fa-trophy me-2"></i>Your Performance</h4>
+                    
+                    <div class="performance-score-display">
+                        <div class="performance-score" id="userPerformanceScore">0%</div>
+                        <p style="color: #94a3b8; font-size: 12px;">Your Score</p>
+                    </div>
+                    
+                    <div id="performanceBadgeContainer" class="performance-badge-container"></div>
+                    
+                    <div id="certificateButtonContainer"></div>
+                    
+                    <div id="performanceMessage" class="performance-message"></div>
+                </div>
+                
+                <div class="analytics-progress-section">
+                    <h4><i class="fas fa-chart-line me-2"></i>Statistics Overview</h4>
+                    <div class="analytics-progress-bar-container">
+                        <div class="analytics-progress-fill" id="analyticsProgressBar" style="width: 0%;">
+                            0%
+                        </div>
+                    </div>
+                    <div class="analytics-scores">
+                        <div class="analytics-score-item">
+                            <div class="label">Max Score</div>
+                            <div class="value" id="analyticsMaxScore">0%</div>
+                        </div>
+                        <div class="analytics-score-item">
+                            <div class="label">Min Score</div>
+                            <div class="value" id="analyticsMinScore">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = "../../controller/api_quiz.php";
+        const API_ADMIN = "../../controller/api_admin.php";
+        
+        let loadedQuizzes = [];
+        let currentQuizQuestions = [];
+        let userAnswers = {};
+        let currentQuizId = null;
+        let quizTimer = null;
+        let timeLeft = 1800;
+        let userScores = {};
+        let currentQuizTitle = "";
+        let notificationInterval;
+        let lastNotificationCheck = new Date();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserScores();
+            loadQuizzes();
+            loadProgressJournal();
+            
+            // Vérifier les notifications
+            setTimeout(checkForNewQuizNotification, 2000);
+            
+            // Vérifier périodiquement les nouvelles notifications
+            notificationInterval = setInterval(checkForNewQuizNotification, 30000); // Toutes les 30 secondes
+            
+            // Vérifier si un paramètre de notification est présent dans l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const notificationId = urlParams.get('notification');
+            if (notificationId) {
+                // Marquer la notification comme lue
+                markNotificationAsRead(notificationId);
+                
+                // Rediriger vers le quiz correspondant si reference_id est présent
+                const quizId = urlParams.get('quiz_id');
+                if (quizId) {
+                    setTimeout(() => {
+                        loadQuizDetail(parseInt(quizId));
+                    }, 500);
+                }
+            }
+        });
+
+        // NOUVELLE FONCTION: Vérifier les nouvelles notifications
+        function checkForNewQuizNotification() {
+            fetch(`${API_ADMIN}?action=getNewQuizNotifications&last_check=${lastNotificationCheck.toISOString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.notifications && data.notifications.length > 0) {
+                        data.notifications.forEach(notification => {
+                            showToastNotification(notification.message);
+                            
+                            // Mettre à jour le badge "NEW" sur le quiz correspondant
+                            if (notification.reference_id) {
+                                markQuizAsNew(notification.reference_id);
+                            }
+                        });
+                        
+                        // Mettre à jour la date de dernière vérification
+                        lastNotificationCheck = new Date();
+                        
+                        // Mettre à jour le compteur de notifications non lues
+                        updateUnreadCount();
+                        
+                        // Recharger les quizzes pour afficher les badges "NEW"
+                        loadQuizzes();
+                    }
+                })
+                .catch(error => console.error('Error checking notifications:', error));
+        }
+
+        // NOUVELLE FONCTION: Marquer un quiz comme "NEW"
+        function markQuizAsNew(quizId) {
+            const quizCard = document.querySelector(`.quiz-card[onclick*="${quizId}"]`);
+            if (quizCard) {
+                // Vérifier si le badge "NEW" existe déjà
+                if (!quizCard.querySelector('.new-badge')) {
+                    const newBadge = document.createElement('div');
+                    newBadge.className = 'new-badge';
+                    newBadge.innerHTML = '<i class="fas fa-fire me-1"></i>NEW';
+                    quizCard.appendChild(newBadge);
+                    
+                    // Animer le badge
+                    setTimeout(() => {
+                        newBadge.style.animation = 'pulse 2s infinite';
+                    }, 100);
+                }
+            }
+        }
+
+        // NOUVELLE FONCTION: Afficher une notification toast
+        function showToastNotification(message) {
+            // Vérifier si une notification est déjà affichée
+            if (document.querySelector('.toast-notification')) {
+                return;
+            }
+            
+            // Créer l'élément toast
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-message">${escapeHtml(message)}</div>
+                    <button class="toast-close" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Ajouter le toast au body
+            document.body.appendChild(toast);
+            
+            // Supprimer automatiquement après 5 secondes
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // NOUVELLE FONCTION: Mettre à jour le compteur de notifications non lues
+        function updateUnreadCount() {
+            fetch(`${API_ADMIN}?action=countUnreadNotifications&user_id=1`)
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('notificationBadge');
+                    if (badge) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 9 ? '9+' : data.count;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating unread count:', error);
+                });
+        }
+
+        // NOUVELLE FONCTION: Marquer une notification comme lue
+        function markNotificationAsRead(notificationId) {
+            const formData = new FormData();
+            formData.append('action', 'markNotificationRead');
+            formData.append('id', notificationId);
+            
+            fetch(API_ADMIN, {
+                method: 'POST',
+                body: formData
+            }).catch(error => console.error('Error marking notification as read:', error));
+        }
+
+        // Load user scores
+        async function loadUserScores() {
+            try {
+                const response = await fetch(`${API_BASE}?action=getUserQuizScores`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.scores) {
+                        Object.keys(data.scores).forEach(quizId => {
+                            userScores[quizId] = Math.round(data.scores[quizId]);
+                        });
+                        console.log('Scores loaded from API:', userScores);
+                    }
+                }
+                
+                const savedScores = localStorage.getItem('userQuizScores');
+                if (savedScores) {
+                    const parsedScores = JSON.parse(savedScores);
+                    Object.keys(parsedScores).forEach(quizId => {
+                        const newScore = parsedScores[quizId];
+                        if (!userScores[quizId] || newScore > userScores[quizId]) {
+                            userScores[quizId] = newScore;
+                        }
+                    });
+                    console.log('Scores merged with localStorage:', userScores);
+                }
+            } catch (error) {
+                console.error('Error loading scores:', error);
+                
+                const savedScores = localStorage.getItem('userQuizScores');
+                if (savedScores) {
+                    userScores = JSON.parse(savedScores);
+                }
+            }
+        }
+
+        async function loadQuizzes() {
+            try {
+                const response = await fetch(`${API_BASE}?action=getActiveQuizzes`);
+                const quizzes = await response.json();
+                loadedQuizzes = quizzes;
+
+                const grid = document.getElementById('quiz-grid');
+
+                if (quizzes.length === 0) {
+                    grid.innerHTML = `<div style="text-align:center; grid-column:1/-1; color:#94a3b8; padding:40px;">No active quizzes found.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = quizzes.map(quiz => {
+                    const userScore = userScores[quiz.id_quiz];
+                    let scoreDisplay = '';
+                    
+                    // Vérifier si c'est un nouveau quiz (moins de 24h)
+                    const quizDate = new Date(quiz.date_creation);
+                    const now = new Date();
+                    const hoursDiff = (now - quizDate) / (1000 * 60 * 60);
+                    const isNewQuiz = hoursDiff < 24;
+                    
+                    if (userScore !== undefined && userScore > 0) {
+                        let badgeClass = '';
+                        if (userScore >= 80) {
+                            badgeClass = 'badge-gold';
+                        } else if (userScore >= 50) {
+                            badgeClass = 'badge-bronze';
+                        } else if (userScore > 0) {
+                            badgeClass = 'badge-encouragement';
+                        } else if (userScore === 0) {
+                            badgeClass = 'badge-zero';
+                        }
+                        
+                        scoreDisplay = `
+                        <div class="mt-2 performance-badge ${badgeClass}" style="padding: 4px 8px; font-size: 11px; width: fit-content; margin: 0 auto;">
+                            <i class="fas fa-star me-1"></i>Your score: ${userScore}%
+                        </div>
+                        `;
+                    } else if (userScore === 0) {
+                        scoreDisplay = `
+                        <div class="mt-2 performance-badge badge-zero" style="padding: 4px 8px; font-size: 11px; width: fit-content; margin: 0 auto;">
+                            <i class="fas fa-times-circle me-1"></i>Score: 0%
+                        </div>
+                        `;
+                    } else {
+                        scoreDisplay = `
+                        <div class="mt-2 performance-badge badge-not-attempted" style="padding: 4px 8px; font-size: 11px; width: fit-content; margin: 0 auto;">
+                            <i class="fas fa-question-circle me-1"></i>Not Attempted
+                        </div>
+                        `;
+                    }
+                    
+                    // Ajouter le badge "Nouveau" si c'est un nouveau quiz
+                    const newBadge = isNewQuiz ? `
+                        <div class="new-badge">
+                            <i class="fas fa-fire me-1"></i>NEW
+                        </div>
+                    ` : '';
+                    
+                    return `
+                    <div class="quiz-card position-relative" onclick="loadQuizDetail(${quiz.id_quiz})">
+                        ${newBadge}
+                        <div class="quiz-icon"><i class="fas fa-shield-alt"></i></div>
+                        <h3>${escapeHtml(quiz.titre)}</h3>
+                        <p>${escapeHtml(quiz.description)}</p>
+                        ${scoreDisplay}
+                        <div class="quiz-meta">
+                            <span class="difficulty difficulty-beginner">${escapeHtml(quiz.description).split(' ')[0] || 'General'}</span>
+                            <span class="quiz-status status-active">Active</span>
+                        </div>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-info" onclick="event.stopPropagation(); showQuizAnalytics(${quiz.id_quiz})" style="padding: 5px 10px; font-size: 12px;">
+                                <i class="fas fa-chart-bar me-1"></i>Analytics
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error(error);
+                document.getElementById('quiz-grid').innerHTML = `<div style="color:#ef4444; text-align:center; grid-column:1/-1; padding:40px;">Error loading quizzes.</div>`;
+            }
+        }
+
+        async function loadQuizDetail(quizId) {
+            const quiz = loadedQuizzes.find(q => q.id_quiz == quizId);
+            if (!quiz) return;
+
+            currentQuizId = quizId;
+            currentQuizTitle = quiz.titre;
+
+            document.getElementById('detail-title').textContent = quiz.titre;
+            document.getElementById('detail-description').textContent = quiz.description;
+
+            document.getElementById('questions-container').innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin text-white"></i></div>';
+
+            document.getElementById('quiz-list-view').style.display = 'none';
+            document.getElementById('quiz-detail-view').style.display = 'block';
+            window.scrollTo(0, 0);
+
+            userAnswers = {};
+            timeLeft = 1800;
+            updateTimerDisplay();
+            
+            if (quizTimer) clearInterval(quizTimer);
+            quizTimer = setInterval(updateTimer, 1000);
+
+            try {
+                const response = await fetch(`${API_BASE}?action=getQuestions&id=${quizId}`);
+                const questions = await response.json();
+                currentQuizQuestions = questions;
+                displayQuestions(questions);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('questions-container').innerHTML = '<p class="text-center" style="color:#ef4444;">Error loading questions.</p>';
+            }
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                clearInterval(quizTimer);
+                alert("Time's up! Submitting...");
+                submitQuiz();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('time-left').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function displayQuestions(questions) {
+            const container = document.getElementById('questions-container');
+
+            if (questions.length === 0) {
+                container.innerHTML = '<div class="text-center p-4 text-muted">No questions in this quiz.</div>';
+                return;
+            }
+
+            container.innerHTML = questions.map((q, index) => `
+                <div class="question-card" id="q-card-${q.id_reponse}">
+                    <div class="question-text">${index + 1}. ${escapeHtml(q.question)}</div>
+                    <div class="options-list">
+                        <div class="option-item" onclick="selectOption(${q.id_reponse}, 1)">
+                            <div class="option-number">A</div>
+                            <div>${escapeHtml(q.option1)}</div>
+                        </div>
+                        <div class="option-item" onclick="selectOption(${q.id_reponse}, 2)">
+                            <div class="option-number">B</div>
+                            <div>${escapeHtml(q.option2)}</div>
+                        </div>
+                        <div class="option-item" onclick="selectOption(${q.id_reponse}, 3)">
+                            <div class="option-number">C</div>
+                            <div>${escapeHtml(q.option3)}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectOption(qId, optionNum) {
+            const card = document.getElementById(`q-card-${qId}`);
+            const options = card.querySelectorAll('.option-item');
+
+            options.forEach(opt => opt.classList.remove('selected'));
+            options[optionNum - 1].classList.add('selected');
+
+            userAnswers[qId] = optionNum;
+        }
+
+        async function submitQuiz() {
+            if (quizTimer) clearInterval(quizTimer);
+            
+            let score = 0;
+            let total = currentQuizQuestions.length;
+
+            if (total === 0) {
+                alert("No questions to submit.");
+                return;
+            }
+
+            if (Object.keys(userAnswers).length < total) {
+                if (!confirm("You skipped some questions. Submit anyway?")) return;
+            }
+
+            currentQuizQuestions.forEach(q => {
+                if (userAnswers[q.id_reponse] == q.reponse_correcte) {
+                    score++;
+                }
+            });
+
+            const percent = Math.round((score / total) * 100);
+            
+            userScores[currentQuizId] = percent;
+            
+            localStorage.setItem('userQuizScores', JSON.stringify(userScores));
+            
+            const timeTaken = 1800 - timeLeft;
+            
+            alert(`Quiz submitted! You scored ${score}/${total} (${percent}%).`);
+            
+            try {
+                const formData = new URLSearchParams({
+                    action: 'submitQuizResult',
+                    user_id: 1,
+                    quiz_id: currentQuizId,
+                    score: percent,
+                    total_questions: total,
+                    time_taken: timeTaken,
+                    answers: JSON.stringify(userAnswers)
+                });
+                
+                const response = await fetch(API_ADMIN, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+                const result = await response.json();
+                console.log('Result saved in admin:', result);
+                
+                const response2 = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'saveQuizResult',
+                        quiz_id: currentQuizId,
+                        score: percent,
+                        total_questions: total
+                    })
+                });
+                const result2 = await response2.json();
+                console.log('Result saved in quiz session:', result2);
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+            
+            loadQuizzes();
+            loadProgressJournal();
+            showQuizList();
+        }
+
+        async function showQuizAnalytics(quizId) {
+            try {
+                const quiz = loadedQuizzes.find(q => q.id_quiz == quizId);
+                const quizTitle = quiz ? quiz.titre : 'Quiz';
+                currentQuizTitle = quizTitle;
+                
+                const response = await fetch(`${API_ADMIN}?action=getQuizAnalytics&id=${quizId}`);
+                const analytics = await response.json();
+                
+                document.getElementById('analyticsQuizTitle').textContent = quizTitle;
+                
+                document.getElementById('analyticsParticipants').textContent = analytics.participants || 0;
+                document.getElementById('analyticsAttempts').textContent = analytics.total_attempts || 0;
+                document.getElementById('analyticsAvgScore').textContent = Math.round(analytics.avg_score || 0) + '%';
+                document.getElementById('analyticsMaxScore').textContent = Math.round(analytics.max_score || 0) + '%';
+                document.getElementById('analyticsMinScore').textContent = Math.round(analytics.min_score || 0) + '%';
+                
+                const userScore = userScores[quizId] || 0;
+                document.getElementById('userPerformanceScore').textContent = Math.round(userScore) + '%';
+                
+                displayPerformanceBadge(userScore, quizId);
+                
+                updateStatisticsOverview(userScore, analytics);
+                
+                document.getElementById('analyticsModal').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                alert('Error loading analytics. Please try again.');
+            }
+        }
+        
+        function updateStatisticsOverview(userScore, analytics) {
+            const progressBar = document.getElementById('analyticsProgressBar');
+            const maxScore = analytics.max_score || 0;
+            const minScore = analytics.min_score || 0;
+            const avgScore = analytics.avg_score || 0;
+            
+            let displayScore, barClass;
+            
+            if (userScore > 0) {
+                displayScore = userScore;
+                
+                if (userScore >= 80) {
+                    barClass = 'success';
+                } else if (userScore >= 50) {
+                    barClass = 'warning';
+                } else {
+                    barClass = 'danger';
+                }
+            } else {
+                displayScore = avgScore;
+                
+                if (avgScore >= 80) {
+                    barClass = 'success';
+                } else if (avgScore >= 60) {
+                    barClass = 'warning';
+                } else {
+                    barClass = 'danger';
+                }
+            }
+            
+            progressBar.style.width = displayScore + '%';
+            progressBar.textContent = Math.round(displayScore) + '%';
+            progressBar.className = 'analytics-progress-fill ' + barClass;
+            
+            document.getElementById('analyticsMaxScore').textContent = Math.round(maxScore) + '%';
+            document.getElementById('analyticsMinScore').textContent = Math.round(minScore) + '%';
+        }
+        
+        function displayPerformanceBadge(score, quizId) {
+            const container = document.getElementById('performanceBadgeContainer');
+            const messageElement = document.getElementById('performanceMessage');
+            const certificateContainer = document.getElementById('certificateButtonContainer');
+            
+            let badgeHtml = '';
+            let message = '';
+            
+            const hasAttempted = userScores[quizId] !== undefined;
+            
+            if (!hasAttempted) {
+                badgeHtml = `
+                    <div class="performance-badge badge-not-attempted">
+                        <i class="fas fa-question-circle"></i>
+                        <span>NOT ATTEMPTED</span>
+                    </div>
+                `;
+                message = "📝 This quiz hasn't been attempted yet. Try it to see your score!";
+                certificateContainer.innerHTML = '';
+            } else if (score >= 80) {
+                badgeHtml = `
+                    <div class="performance-badge badge-gold">
+                        <i class="fas fa-crown"></i>
+                        <span>GOLD BADGE - EXCELLENT!</span>
+                    </div>
+                `;
+                message = "🏆 Outstanding! " + Math.round(score) + "% - You've mastered this quiz perfectly.";
+                
+                certificateContainer.innerHTML = `
+                    <button class="certificate-btn" onclick="showCertificateModal(${score})">
+                        <i class="fas fa-award"></i>
+                        View Certificate
+                    </button>
+                `;
+            } else if (score >= 50) {
+                badgeHtml = `
+                    <div class="performance-badge badge-bronze">
+                        <i class="fas fa-medal"></i>
+                        <span>BRONZE BADGE - GOOD JOB!</span>
+                    </div>
+                `;
+                message = "🎉 Good job! " + Math.round(score) + "% - Good understanding of the subject.";
+                certificateContainer.innerHTML = '';
+            } else if (score > 0) {
+                badgeHtml = `
+                    <div class="performance-badge badge-encouragement">
+                        <i class="fas fa-heart"></i>
+                        <span>KEEP GOING - PROGRESS!</span>
+                    </div>
+                `;
+                message = "📚 " + Math.round(score) + "% - You're learning! Review and try again to improve your score.";
+                certificateContainer.innerHTML = '';
+            } else if (score === 0) {
+                badgeHtml = `
+                    <div class="performance-badge badge-zero">
+                        <i class="fas fa-times-circle"></i>
+                        <span>NEEDS IMPROVEMENT</span>
+                    </div>
+                `;
+                message = "⚠️ " + Math.round(score) + "% - Review the material and try again. You can do better!";
+                certificateContainer.innerHTML = '';
+            }
+            
+            container.innerHTML = badgeHtml;
+            messageElement.textContent = message;
+        }
+        
+        function showCertificateModal(score) {
+            if (!document.getElementById('certificateModal')) {
+                createCertificateModal();
+            }
+            
+            document.getElementById('certificateUserName').textContent = 'John Doe';
+            document.getElementById('certificateQuizTitle').textContent = currentQuizTitle;
+            document.getElementById('certificateScore').textContent = Math.round(score) + '%';
+            
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('certificateDate').textContent = 'Issued on: ' + now.toLocaleDateString('en-US', options);
+            
+            document.getElementById('certificateModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function createCertificateModal() {
+            const modalHTML = `
+            <div id="certificateModal" class="certificate-modal">
+                <div class="certificate-content" id="certificateContent">
+                    <div class="certificate-header">
+                        <h2>CERTIFICATE OF ACHIEVEMENT</h2>
+                        <p>AI ShieldHub - Cybersecurity Excellence</p>
+                    </div>
+                    <div class="certificate-body">
+                        <div class="certificate-logo">
+                            <i class="fas fa-shield-halved"></i>
+                        </div>
+                        <p class="certificate-details">This certifies that</p>
+                        <h3 class="certificate-name" id="certificateUserName">John Doe</h3>
+                        <p class="certificate-details">has successfully completed the quiz</p>
+                        <h4 id="certificateQuizTitle" style="color: #333; font-size: 20px; margin: 15px 0;">Cybersecurity Basics</h4>
+                        <p class="certificate-details">with an outstanding score of</p>
+                        <div class="certificate-score" id="certificateScore">100%</div>
+                        <p class="certificate-details">and has been awarded the</p>
+                        <h4 style="color: #FFD700; font-size: 22px; margin: 15px 0;">GOLD BADGE OF EXCELLENCE</h4>
+                        <p class="certificate-date" id="certificateDate">Issued on: January 15, 2024</p>
+                    </div>
+                    <div class="certificate-footer">
+                        <button class="print-btn" onclick="printCertificate()">
+                            <i class="fas fa-print me-2"></i>Print
+                        </button>
+                        <button class="save-certificate-btn" onclick="saveCertificateAsImage()">
+                            <i class="fas fa-download me-2"></i>Save as Image
+                        </button>
+                        <button class="close-certificate-btn" onclick="closeCertificateModal()">
+                            <i class="fas fa-times me-2"></i>Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        function closeCertificateModal() {
+            document.getElementById('certificateModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function printCertificate() {
+            if (confirm('Do you want to print the certificate?')) {
+                const certificateContent = document.getElementById('certificateContent');
+                const originalContent = document.body.innerHTML;
+                
+                const printContent = certificateContent.innerHTML;
+                document.body.innerHTML = printContent;
+                
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    @media print {
+                        body { margin: 0; padding: 0; }
+                        .certificate-content { 
+                            width: 100% !important; 
+                            max-width: 100% !important;
+                            margin: 0 !important;
+                            box-shadow: none !important;
+                            border-radius: 0 !important;
+                        }
+                        .certificate-footer { display: none !important; }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                window.print();
+                
+                document.body.innerHTML = originalContent;
+                window.location.reload();
+            }
+        }
+        
+        function saveCertificateAsImage() {
+            if (confirm('Save certificate as image? (This feature requires additional libraries)')) {
+                alert('To save as image, you would need to use a library like html2canvas. For now, you can print or take a screenshot.');
+            }
+        }
+        
+        function closeAnalyticsModal() {
+            document.getElementById('analyticsModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('analyticsModal');
+            if (event.target === modal) {
+                closeAnalyticsModal();
+            }
+            const certModal = document.getElementById('certificateModal');
+            if (event.target === certModal) {
+                closeCertificateModal();
+            }
+        });
+
+        async function loadProgressJournal() {
+            try {
+                const response = await fetch(`${API_BASE}?action=getUserProgress`);
+                const progressData = await response.json();
+                displayProgressJournal(progressData);
+            } catch (error) {
+                console.error('Error loading progress:', error);
+            }
+        }
+
+        function displayProgressJournal(progressData) {
+            const journalContainer = document.getElementById('progress-journal');
+            
+            if (!progressData || progressData.length === 0) {
+                journalContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <p>No progress data yet. Complete some quizzes to see your progress!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="progress-header">
+                    <h3><i class="fas fa-chart-line me-2"></i>Your Progress Journal</h3>
+                    <p>Track your improvement over time</p>
+                </div>
+                <div class="progress-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">${progressData.length}</div>
+                        <div class="stat-label">Active Days</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${Math.round(progressData.reduce((acc, day) => acc + parseFloat(day.avg_score), 0) / progressData.length)}%</div>
+                        <div class="stat-label">Average Score</div>
+                    </div>
+                </div>
+                <div class="progress-timeline">
+            `;
+
+            progressData.forEach(day => {
+                const date = new Date(day.date);
+                const month = date.toLocaleDateString('en', { month: 'short' });
+                const avgScore = parseFloat(day.avg_score);
+                const progressClass = avgScore >= 70 ? 'high' : avgScore >= 50 ? 'medium' : 'low';
+                
+                html += `
+                    <div class="progress-day ${progressClass}">
+                        <div class="day-header">
+                            <span class="month">${month}</span>
+                            <span class="date">${date.getDate()}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${avgScore}%"></div>
+                        </div>
+                        <div class="day-stats">
+                            <span class="score">${Math.round(avgScore)}%</span>
+                            <span class="quizzes">${day.quiz_count} quiz${day.quiz_count > 1 ? 'zes' : ''}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            journalContainer.innerHTML = html;
+        }
+
+        function showQuizList() {
+            if (quizTimer) clearInterval(quizTimer);
+            document.getElementById('quiz-detail-view').style.display = 'none';
+            document.getElementById('quiz-list-view').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+        
+        // Function to reset scores (for debugging)
+        function resetScores() {
+            if (confirm('Do you want to reset all your scores?')) {
+                userScores = {};
+                localStorage.removeItem('userQuizScores');
+                loadQuizzes();
+                alert('Scores reset!');
+            }
+        }
+        
+        // Nettoyer l'intervalle de notification quand la page se ferme
+        window.addEventListener('beforeunload', function() {
+            if (notificationInterval) {
+                clearInterval(notificationInterval);
+            }
+        });
+    </script>
+</body>
+
+</html>

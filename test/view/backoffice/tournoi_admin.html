@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Management - Page Inner</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+    }
+    
+    .btn-action {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    
+    .loading-spinner {
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+    }
+    
+    /* Tournament Styles */
+    .badge-niveau {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-block;
+    }
+
+    .badge-debutant {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: #fff;
+    }
+
+    .badge-intermediaire {
+      background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+      color: #fff;
+    }
+
+    .badge-expert {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: #fff;
+    }
+
+    .card {
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      border: none;
+    }
+
+    .card-round {
+      border-radius: 10px;
+    }
+
+    .card-header {
+      background-color: #fff;
+      border-bottom: 1px solid #e9ecef;
+      padding: 1rem 1.5rem;
+    }
+
+    .card-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="page-inner">
+    <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+      <div>
+        <h3 class="fw-bold mb-3">Tournament Management</h3>
+        <h6 class="opacity-75 mb-2">Add, modify or delete cybersecurity tournaments</h6>
+      </div>
+      <div class="ms-md-auto py-2 py-md-0">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ajoutTournoiModal">
+          <i class="fas fa-plus me-2"></i>Add Tournament
+        </button>
+      </div>
+    </div>
+
+    <!-- Message Container -->
+    <div id="messageContainer"></div>
+
+    <!-- Tournament List -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card card-round">
+          <div class="card-header">
+            <div class="card-head-row">
+              <div class="card-title">Tournaments List</div>
+              <div class="card-tools">
+                <button class="btn btn-sm btn-light" onclick="loadTournois()">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Theme</th>
+                    <th>Level</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tournoiTableBody">
+                  <tr>
+                    <td colspan="7" class="text-center">
+                      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Loading tournaments...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Tournament Modal -->
+  <div class="modal fade" id="ajoutTournoiModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add New Tournament</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formAjoutTournoi">
+            <input type="hidden" name="action" value="ajouter">
+            <div class="mb-3">
+              <label for="nom" class="form-label">Tournament Name</label>
+              <input type="text" id="nom" name="nom" class="form-control" required minlength="3">
+            </div>
+            <div class="mb-3">
+              <label for="theme" class="form-label">Theme</label>
+              <input type="text" id="theme" name="theme" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="niveau" class="form-label">Level</label>
+              <select id="niveau" name="niveau" class="form-select" required>
+                <option value="Débutant">Beginner</option>
+                <option value="Intermédiaire">Intermediate</option>
+                <option value="Expert">Expert</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="date_debut" class="form-label">Start Date</label>
+              <input type="date" id="date_debut" name="date_debut" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="date_fin" class="form-label">End Date</label>
+              <input type="date" id="date_fin" name="date_fin" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Save</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Tournament Modal -->
+  <div class="modal fade" id="modifierTournoiModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Tournament</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formModifierTournoi">
+            <input type="hidden" name="action" value="modifier">
+            <input type="hidden" id="edit_id" name="id">
+            <div class="mb-3">
+              <label for="edit_nom" class="form-label">Tournament Name</label>
+              <input type="text" id="edit_nom" name="nom" class="form-control" required minlength="3">
+            </div>
+            <div class="mb-3">
+              <label for="edit_theme" class="form-label">Theme</label>
+              <input type="text" id="edit_theme" name="theme" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit_niveau" class="form-label">Level</label>
+              <select id="edit_niveau" name="niveau" class="form-select" required>
+                <option value="Débutant">Beginner</option>
+                <option value="Intermédiaire">Intermediate</option>
+                <option value="Expert">Expert</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="edit_date_debut" class="form-label">Start Date</label>
+              <input type="date" id="edit_date_debut" name="date_debut" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit_date_fin" class="form-label">End Date</label>
+              <input type="date" id="edit_date_fin" name="date_fin" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Update</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ========== CONFIGURATION ==========
+  const TOURNAMENT_API_URL = '../../tournoi_handler.php';
+
+
+    // ========== TOURNAMENT MANAGEMENT ==========
+    
+    // Load tournaments on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTournois();
+    });
+
+    // Add tournament
+    document.getElementById('formAjoutTournoi').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      
+      try {
+        const response = await fetch(TOURNAMENT_API_URL, { 
+          method: 'POST', 
+          body: formData 
+        });
+        
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        const result = JSON.parse(text);
+        
+        showTournoiMessage(result.message, result.success ? 'success' : 'danger');
+        
+        if (result.success) {
+          bootstrap.Modal.getInstance(document.getElementById('ajoutTournoiModal')).hide();
+          this.reset();
+          loadTournois();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showTournoiMessage('Connection error: ' + error.message, 'danger');
+      }
+    });
+
+    // Modify tournament
+    document.getElementById('formModifierTournoi').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      
+      try {
+        const response = await fetch(TOURNAMENT_API_URL, { 
+          method: 'POST', 
+          body: formData 
+        });
+        
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        const result = JSON.parse(text);
+        
+        showTournoiMessage(result.message, result.success ? 'success' : 'danger');
+        
+        if (result.success) {
+          bootstrap.Modal.getInstance(document.getElementById('modifierTournoiModal')).hide();
+          loadTournois();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showTournoiMessage('Connection error: ' + error.message, 'danger');
+      }
+    });
+
+    // Load all tournaments
+    async function loadTournois() {
+      try {
+        const response = await fetch(TOURNAMENT_API_URL);
+        const text = await response.text();
+        
+        console.log('Raw response:', text);
+        
+        const result = JSON.parse(text);
+        
+        const tbody = document.getElementById('tournoiTableBody');
+        
+        if (result.success && result.data && result.data.length > 0) {
+          tbody.innerHTML = result.data.map(t => `
+            <tr>
+              <td><strong>${t.id}</strong></td>
+              <td><strong>${escapeHtml(t.nom)}</strong></td>
+              <td>${escapeHtml(t.theme)}</td>
+              <td><span class="badge-niveau badge-${getNiveauClass(t.niveau)}">${escapeHtml(t.niveau)}</span></td>
+              <td>${formatDate(t.date_debut)}</td>
+              <td>${formatDate(t.date_fin)}</td>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-warning btn-action" onclick="editTournoi(${t.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger btn-action" onclick="deleteTournoi(${t.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="empty-state"><i class="fas fa-trophy fa-3x mb-3 text-muted"></i><p>No tournaments found</p></div></td></tr>';
+        }
+      } catch (error) {
+        console.error('Loading error:', error);
+        showTournoiMessage('Loading error: ' + error.message, 'danger');
+        document.getElementById('tournoiTableBody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading tournaments</td></tr>';
+      }
+    }
+
+    // Edit tournament
+    async function editTournoi(id) {
+      try {
+        const response = await fetch(`${TOURNAMENT_API_URL}?id=${id}`);
+        const text = await response.text();
+        
+        console.log('Edit response:', text);
+        
+        const result = JSON.parse(text);
+        
+        if (result.success && result.data) {
+          const t = result.data;
+          document.getElementById('edit_id').value = t.id;
+          document.getElementById('edit_nom').value = t.nom;
+          document.getElementById('edit_theme').value = t.theme;
+          document.getElementById('edit_niveau').value = t.niveau;
+          document.getElementById('edit_date_debut').value = t.date_debut;
+          document.getElementById('edit_date_fin').value = t.date_fin;
+          
+          new bootstrap.Modal(document.getElementById('modifierTournoiModal')).show();
+        } else {
+          showTournoiMessage('Tournament not found', 'danger');
+        }
+      } catch (error) {
+        console.error('Loading error:', error);
+        showTournoiMessage('Loading error: ' + error.message, 'danger');
+      }
+    }
+
+    // Delete tournament
+    async function deleteTournoi(id) {
+      if (!confirm('Are you sure you want to delete this tournament?')) return;
+      
+      const formData = new FormData();
+      formData.append('action', 'supprimer');
+      formData.append('id', id);
+      
+      try {
+        const response = await fetch(TOURNAMENT_API_URL, { 
+          method: 'POST', 
+          body: formData 
+        });
+        
+        const text = await response.text();
+        console.log('Delete response:', text);
+        
+        const result = JSON.parse(text);
+        
+        showTournoiMessage(result.message, result.success ? 'success' : 'danger');
+        
+        if (result.success) {
+          loadTournois();
+        }
+      } catch (error) {
+        console.error('Connection error:', error);
+        showTournoiMessage('Connection error: ' + error.message, 'danger');
+      }
+    }
+
+    function showTournoiMessage(message, type) {
+      const container = document.getElementById('messageContainer');
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+      container.innerHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+          <strong>${type === 'success' ? 'Success!' : 'Error!'}</strong> ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      `;
+      setTimeout(() => container.innerHTML = '', 5000);
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      return new Date(dateString).toLocaleDateString('en-US');
+    }
+
+    function getNiveauClass(niveau) {
+      const map = {
+        'Débutant': 'debutant',
+        'Intermédiaire': 'intermediaire',
+        'Expert': 'expert'
+      };
+      return map[niveau] || 'debutant';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
