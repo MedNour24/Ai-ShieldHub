@@ -19,112 +19,6 @@ $reactionController = new ReactionController();
 // Section active
 $activeSection = isset($_GET['section']) ? $_GET['section'] : 'feed';
 
-// ---------- CONFIGURATION DE L'API AI ----------
-define('OPENAI_API_KEY', 'VOTRE_CLE_API_OPENAI_ICI'); // À remplacer par votre clé API
-define('OPENAI_API_URL', 'https://api.openai.com/v1/chat/completions');
-
-// ---------- GESTION DE L'ASSISTANT AI ----------
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ai_question'])) {
-    $publicationId = intval($_POST['publication_id']);
-    $question = trim($_POST['ai_question']);
-    $publicationText = trim($_POST['publication_text']);
-    
-    // Appel à l'API OpenAI ChatGPT
-    function getAIResponse($publicationText, $question) {
-        $apiKey = OPENAI_API_KEY;
-        
-        // Préparation du prompt pour ChatGPT
-        $prompt = "Tu es un expert en cybersécurité qui aide des étudiants. 
-        
-        CONTEXTE DE LA PUBLICATION :
-        {$publicationText}
-        
-        QUESTION DE L'ÉTUDIANT :
-        {$question}
-        
-        Donne une réponse :
-        1. Claire et pédagogique
-        2. Précise techniquement
-        3. Avec des exemples concrets si possible
-        4. En français (sauf pour les termes techniques en anglais)
-        5. En indiquant les bonnes pratiques de sécurité
-        6. En mentionnant si le sujet est avancé ou débutant
-        
-        Réponds directement à la question sans faire d'introduction longue.";
-        
-        $headers = [
-            'Authorization: Bearer ' . $apiKey,
-            'Content-Type: application/json'
-        ];
-        
-        $data = [
-            'model' => 'gpt-3.5-turbo',
-            'messages' => [
-                ['role' => 'system', 'content' => 'Tu es un expert en cybersécurité avec 15 ans d\'expérience. Tu aides des étudiants à comprendre des concepts complexes.'],
-                ['role' => 'user', 'content' => $prompt]
-            ],
-            'max_tokens' => 800,
-            'temperature' => 0.7
-        ];
-        
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, OPENAI_API_URL);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        
-        $response = curl_exec($ch);
-        
-        if (curl_errno($ch)) {
-            $error_msg = curl_error($ch);
-            curl_close($ch);
-            throw new Exception("Erreur cURL : " . $error_msg);
-        }
-        
-        curl_close($ch);
-        
-        $responseData = json_decode($response, true);
-        
-        if (isset($responseData['error'])) {
-            throw new Exception("Erreur OpenAI : " . $responseData['error']['message']);
-        }
-        
-        if (!isset($responseData['choices'][0]['message']['content'])) {
-            throw new Exception("Réponse OpenAI invalide");
-        }
-        
-        return $responseData['choices'][0]['message']['content'];
-    }
-    
-    try {
-        $aiResponse = getAIResponse($publicationText, $question);
-        
-        // Retourner la réponse en JSON
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true,
-            'response' => $aiResponse,
-            'question' => $question,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
-        
-    } catch (Exception $e) {
-        // En cas d'erreur, retourner une réponse par défaut
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'response' => "Je suis désolé, je ne peux pas répondre pour le moment. Erreur technique : " . $e->getMessage(),
-            'question' => $question,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
-    }
-    
-    exit();
-}
-
 // ---------- GESTION DE L'AJOUT DE PUBLICATION ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['texte'])) {
 
@@ -196,6 +90,16 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             --light: #e2e8f0;
         }
         
+        /* Thème sombre par défaut */
+        [data-theme="light"] {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --accent: #db2777;
+            --dark: #f1f5f9;
+            --darker: #ffffff;
+            --light: #0f172a;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -206,6 +110,8 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             background: var(--darker);
+            color: var(--light);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         /* Animated Background */
@@ -217,6 +123,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             height: 100%;
             z-index: -1;
             background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 50%, #1e1b4b 100%);
+            transition: background 0.3s ease;
         }
         
         .animated-bg::before {
@@ -258,6 +165,10 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(99, 102, 241, 0.2);
             padding: 20px 0;
+        }
+        
+        [data-theme="light"] .navbar {
+            background: rgba(255, 255, 255, 0.8) !important;
         }
         
         .navbar-brand {
@@ -328,7 +239,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         .section-title h2 {
             font-size: 48px;
             font-weight: 900;
-            color: white;
+            color: var(--light);
             margin-bottom: 20px;
         }
         
@@ -337,6 +248,30 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             font-size: 18px;
             max-width: 700px;
             margin: 0 auto;
+        }
+        
+        /* Theme toggle button */
+        .theme-toggle-btn {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .theme-toggle-btn:hover {
+            transform: scale(1.1);
         }
         
         /* Add Publication Button */
@@ -453,19 +388,27 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             color: var(--light);
         }
         
+        [data-theme="light"] .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
         .modal-header {
             border-bottom: 1px solid rgba(99, 102, 241, 0.3);
             padding: 25px;
         }
         
         .modal-title {
-            color: white;
+            color: var(--light);
             font-weight: 700;
             font-size: 24px;
         }
         
         .btn-close {
             filter: invert(1);
+        }
+        
+        [data-theme="light"] .btn-close {
+            filter: none;
         }
         
         .modal-body {
@@ -487,7 +430,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         }
         
         .publication-form h4 {
-            color: white;
+            color: var(--light);
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 20px;
@@ -514,7 +457,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(99, 102, 241, 0.3);
             border-radius: 10px;
-            color: white;
+            color: var(--light);
             font-size: 16px;
             transition: all 0.3s ease;
             resize: none;
@@ -620,10 +563,43 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
         }
         
+        .publication-card.favorited {
+            border: 2px solid var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+        
+        .favorite-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            z-index: 10;
+        }
+        
+        .favorite-icon:hover {
+            color: var(--warning);
+            transform: scale(1.2);
+        }
+        
+        .favorite-icon.active {
+            color: var(--warning);
+            animation: heartBeat 0.5s ease;
+        }
+        
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
         .publication-header {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
+            position: relative;
         }
         
         .publication-avatar {
@@ -640,7 +616,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         }
         
         .publication-author {
-            color: white;
+            color: var(--light);
             font-weight: 700;
             font-size: 18px;
         }
@@ -755,31 +731,46 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             margin-right: 8px;
         }
         
-        /* NOUVEAU STYLE POUR L'ASSISTANT AI */
-        .ai-assistant-btn {
-            background: linear-gradient(135deg, #10b981, #0ea5e9);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            padding: 8px 20px;
-            font-weight: 600;
+        /* Report Button */
+        .report-btn {
+            position: absolute;
+            top: 15px;
+            right: 45px;
+            color: rgba(226, 232, 240, 0.5);
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             font-size: 14px;
-            text-decoration: none;
-            margin-left: auto;
+            z-index: 10;
         }
         
-        .ai-assistant-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        .report-btn:hover {
+            color: var(--accent);
         }
         
-        .ai-assistant-btn i {
-            font-size: 16px;
+        .report-modal-content {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            color: var(--light);
+        }
+        
+        .report-reason {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .report-reason:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .report-reason.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid var(--primary);
         }
         
         /* Comments Section */
@@ -797,7 +788,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         }
         
         .comments-title {
-            color: white;
+            color: var(--light);
             font-size: 16px;
             font-weight: 600;
         }
@@ -830,7 +821,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         }
         
         .comment-preview-author {
-            color: white;
+            color: var(--light);
             font-weight: 600;
             font-size: 14px;
         }
@@ -955,99 +946,6 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             display: none;
         }
         
-        /* Modal AI Assistant */
-        .ai-assistant-modal .modal-content {
-            background: linear-gradient(135deg, #0f172a, #1e1b4b);
-            border: 2px solid #10b981;
-            border-radius: 20px;
-        }
-        
-        .ai-header {
-            background: linear-gradient(135deg, #10b981, #0ea5e9);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .ai-response {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 20px;
-            color: #e2e8f0;
-            line-height: 1.6;
-            white-space: pre-line;
-        }
-        
-        .ai-thinking {
-            text-align: center;
-            padding: 20px;
-            color: #94a3b8;
-        }
-        
-        .ai-thinking i {
-            font-size: 24px;
-            margin-bottom: 10px;
-            display: block;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .ai-message {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .ai-question {
-            background: rgba(99, 102, 241, 0.1);
-            border-left: 4px solid #6366f1;
-        }
-        
-        .ai-answer {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid #10b981;
-        }
-        
-        .ai-timestamp {
-            font-size: 12px;
-            color: #94a3b8;
-            text-align: right;
-            margin-top: 5px;
-        }
-        
-        .ai-code-block {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 12px;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            overflow-x: auto;
-        }
-        
-        .ai-warning {
-            background: rgba(245, 158, 11, 0.1);
-            border-left: 4px solid #f59e0b;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        
-        .ai-tip {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid #3b82f6;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        
         /* Footer */
         footer {
             background: rgba(15, 23, 42, 0.8);
@@ -1055,6 +953,10 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             padding: 60px 0 30px;
             border-top: 1px solid rgba(99, 102, 241, 0.2);
             margin-top: 80px;
+        }
+        
+        [data-theme="light"] footer {
+            background: rgba(255, 255, 255, 0.8);
         }
         
         .footer-brand {
@@ -1069,7 +971,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         }
         
         footer h5 {
-            color: white;
+            color: var(--light);
             font-weight: 700;
             margin-bottom: 20px;
         }
@@ -1135,9 +1037,9 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 padding: 10px 15px;
                 font-size: 13px;
             }
-            .ai-assistant-btn {
-                margin-left: 0;
-                margin-top: 10px;
+            .theme-toggle-btn {
+                top: 80px;
+                right: 10px;
             }
         }
         
@@ -1159,6 +1061,11 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         <div class="particle" style="width: 60px; height: 60px; background: rgba(139, 92, 246, 0.3); top: 60%; left: 80%; animation-delay: 3s;"></div>
         <div class="particle" style="width: 80px; height: 80px; background: rgba(236, 72, 153, 0.3); top: 80%; left: 20%; animation-delay: 6s;"></div>
     </div>
+
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle-btn" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
 
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
@@ -1186,7 +1093,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                             <li><a class="dropdown-item" href="#" onclick="openProfileModal(); return false;" style="color: var(--light);"><i class="fas fa-user me-2"></i>My Profile</a></li>
                             <li><a class="dropdown-item" href="#" onclick="showMyPublications(); return false;" style="color: var(--light);"><i class="fas fa-newspaper me-2"></i>My Publications</a></li>
                             <li><hr class="dropdown-divider" style="border-color: rgba(99, 102, 241, 0.3);"></li>
-                            <li><a class="dropdown-item" href="./logout.html" style="color: var(--accent);"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout(); return false;" style="color: var(--accent);"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -1226,7 +1133,21 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                         $reactionsSummary = $reactionController->getReactionsSummary($p['id_publication']);
                         $userReaction = $reactionController->getUserReaction($p['id_publication'], $idUser);
                     ?>
-                        <div class="publication-card">
+                        <div class="publication-card" data-publication-id="<?= $p['id_publication'] ?>">
+                            <!-- Favorite Icon -->
+                            <i class="fas fa-star favorite-icon" 
+                               data-publication-id="<?= $p['id_publication'] ?>"
+                               title="Add to favorites"></i>
+                            
+                            <!-- Report Button -->
+                            <div class="report-btn" 
+                                 data-bs-toggle="modal" 
+                                 data-bs-target="#reportModal"
+                                 data-publication-id="<?= $p['id_publication'] ?>"
+                                 title="Report this publication">
+                                <i class="fas fa-flag"></i>
+                            </div>
+                            
                             <div class="publication-header">
                                 <div class="publication-avatar">
                                     <i class="fas fa-user"></i>
@@ -1249,7 +1170,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                 </div>
                             <?php endif; ?>
                             
-                            <!-- NOUVEAU SYSTÈME DE RÉACTIONS AVEC BOUTON AI -->
+                            <!-- SYSTÈME DE RÉACTIONS -->
                             <div class="reaction-buttons">
                                 <button class="reaction-btn <?= $userReaction === 'like' ? 'active liked' : '' ?>" 
                                         data-publication-id="<?= $p['id_publication'] ?>" 
@@ -1282,11 +1203,6 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                 <a href="deletePublicationFront.php?id=<?= $p['id_publication'] ?>&id_utilisateur=<?= $idUser ?>" class="action-btn" onclick="return confirm('Are you sure you want to delete this publication?')">
                                     <i class="fas fa-trash"></i>Delete
                                 </a>
-                                
-                                <!-- BOUTON AI ASSISTANT -->
-                                <button class="ai-assistant-btn" data-publication-id="<?= $p['id_publication'] ?>">
-                                    <i class="fas fa-robot"></i>AI Assistant
-                                </button>
                             </div>
 
                             <!-- SECTION COMMENTAIRES POUR CETTE PUBLICATION -->
@@ -1414,7 +1330,21 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                         $reactionsSummary = $reactionController->getReactionsSummary($f['id_publication']);
                         $userReaction = $reactionController->getUserReaction($f['id_publication'], $idUser);
                     ?>
-                        <div class="publication-card">
+                        <div class="publication-card" data-publication-id="<?= $f['id_publication'] ?>">
+                            <!-- Favorite Icon -->
+                            <i class="fas fa-star favorite-icon" 
+                               data-publication-id="<?= $f['id_publication'] ?>"
+                               title="Add to favorites"></i>
+                            
+                            <!-- Report Button -->
+                            <div class="report-btn" 
+                                 data-bs-toggle="modal" 
+                                 data-bs-target="#reportModal"
+                                 data-publication-id="<?= $f['id_publication'] ?>"
+                                 title="Report this publication">
+                                <i class="fas fa-flag"></i>
+                            </div>
+                            
                             <div class="publication-header">
                                 <div class="publication-avatar">
                                     <i class="fas fa-user"></i>
@@ -1461,11 +1391,6 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                                 <a href="addcommentaire.php?id_utilisateur=<?= $idUser ?>&id_publication=<?= $f['id_publication'] ?>" class="action-btn">
                                     <i class="fas fa-comments"></i>Comments
                                 </a>
-                                
-                                <!-- BOUTON AI ASSISTANT -->
-                                <button class="ai-assistant-btn" data-publication-id="<?= $f['id_publication'] ?>">
-                                    <i class="fas fa-robot"></i>AI Assistant
-                                </button>
                             </div>
 
                             <div class="comments-preview">
@@ -1581,53 +1506,67 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
         </div>
     </div>
 
-    <!-- Modal AI Assistant -->
-    <div class="modal fade ai-assistant-modal" id="aiAssistantModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+    <!-- Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content report-modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title ai-header">
-                        <i class="fas fa-robot me-2"></i>CyberSecurity AI Assistant
+                    <h5 class="modal-title" id="reportModalLabel">
+                        <i class="fas fa-flag me-2"></i>Report Publication
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="ai-context mb-4">
-                        <h6 class="text-light mb-2"><i class="fas fa-file-alt me-2"></i>Publication Context:</h6>
-                        <div class="publication-preview p-3 bg-dark rounded">
-                            <p id="aiPublicationPreview" class="mb-0 text-light"></p>
-                        </div>
+                    <p class="mb-3">Please select the reason for reporting this publication:</p>
+                    
+                    <div class="report-reason" data-reason="spam">
+                        <i class="fas fa-ban me-2"></i>
+                        <strong>Spam or Advertisement</strong>
+                        <small class="d-block mt-1">Unsolicited commercial content</small>
                     </div>
                     
-                    <div id="aiChatHistory"></div>
-                    
-                    <div class="ai-thinking" id="aiThinking" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>AI Assistant is analyzing your question...</p>
+                    <div class="report-reason" data-reason="hate">
+                        <i class="fas fa-skull me-2"></i>
+                        <strong>Hate Speech</strong>
+                        <small class="d-block mt-1">Content promoting violence or discrimination</small>
                     </div>
                     
-                    <form id="aiQuestionForm">
-                        <input type="hidden" id="aiPublicationId">
-                        <input type="hidden" id="aiPublicationText">
-                        
-                        <div class="form-group">
-                            <label for="aiQuestionInput" class="text-light mb-2">
-                                <i class="fas fa-question-circle me-2"></i>Ask your question:
-                            </label>
-                            <textarea 
-                                id="aiQuestionInput" 
-                                class="form-control bg-dark text-light" 
-                                rows="3" 
-                                placeholder="Ask a question about this publication, request clarification, or ask for related resources..."
-                                required></textarea>
-                        </div>
-                        
-                        <div class="mt-3">
-                            <button type="submit" class="ai-assistant-btn w-100">
-                                <i class="fas fa-paper-plane me-2"></i>Ask AI Assistant
-                            </button>
-                        </div>
-                    </form>
+                    <div class="report-reason" data-reason="harassment">
+                        <i class="fas fa-user-slash me-2"></i>
+                        <strong>Harassment or Bullying</strong>
+                        <small class="d-block mt-1">Targeted attacks or threats</small>
+                    </div>
+                    
+                    <div class="report-reason" data-reason="inappropriate">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Inappropriate Content</strong>
+                        <small class="d-block mt-1">NSFW or offensive material</small>
+                    </div>
+                    
+                    <div class="report-reason" data-reason="misinformation">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Misinformation</strong>
+                        <small class="d-block mt-1">False or misleading information</small>
+                    </div>
+                    
+                    <div class="report-reason" data-reason="other">
+                        <i class="fas fa-ellipsis-h me-2"></i>
+                        <strong>Other</strong>
+                        <small class="d-block mt-1">Another reason not listed</small>
+                    </div>
+                    
+                    <textarea id="reportAdditionalInfo" class="form-control mt-3" rows="3" placeholder="Additional information (optional)..." style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(99, 102, 241, 0.3); color: var(--light);"></textarea>
+                    
+                    <div class="mt-3 text-muted small">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Reports are anonymous. Abusing this feature may result in account suspension.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="submitReport">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Report
+                    </button>
                 </div>
             </div>
         </div>
@@ -1690,7 +1629,344 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Validation du formulaire de publication dans le modal
+        // ============================================
+        // 1. GESTION DU THÈME SOMBRE/CLAIR
+        // ============================================
+        class ThemeManager {
+            constructor() {
+                this.themeToggle = document.getElementById('themeToggle');
+                this.currentTheme = localStorage.getItem('theme') || 'dark';
+                this.init();
+            }
+
+            init() {
+                // Appliquer le thème sauvegardé
+                this.applyTheme(this.currentTheme);
+                
+                // Événement du bouton de basculement
+                this.themeToggle.addEventListener('click', () => this.toggleTheme());
+                
+                // Observer les changements de thème système
+                if (window.matchMedia) {
+                    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+                    prefersDarkScheme.addEventListener('change', (e) => {
+                        if (!localStorage.getItem('theme')) {
+                            this.applyTheme(e.matches ? 'dark' : 'light');
+                        }
+                    });
+                }
+            }
+
+            applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                
+                // Mettre à jour l'icône du bouton
+                const icon = this.themeToggle.querySelector('i');
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-moon';
+                    this.themeToggle.title = 'Switch to light mode';
+                } else {
+                    icon.className = 'fas fa-sun';
+                    this.themeToggle.title = 'Switch to dark mode';
+                }
+            }
+
+            toggleTheme() {
+                const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+                this.currentTheme = newTheme;
+                this.applyTheme(newTheme);
+                
+                // Animation du bouton
+                this.themeToggle.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    this.themeToggle.style.transform = 'scale(1)';
+                }, 150);
+            }
+        }
+
+        // ============================================
+        // 2. SYSTÈME DE FAVORIS LOCAUX
+        // ============================================
+        class FavoriteSystem {
+            constructor() {
+                this.storageKey = 'favoritePublications';
+                this.favorites = new Set(this.getFavorites());
+                this.init();
+            }
+
+            init() {
+                // Initialiser toutes les icônes de favori
+                document.querySelectorAll('.favorite-icon').forEach(icon => {
+                    const publicationId = icon.dataset.publicationId;
+                    if (this.favorites.has(publicationId)) {
+                        icon.classList.add('active');
+                        icon.title = 'Remove from favorites';
+                        
+                        // Marquer la carte comme favorisée
+                        const card = icon.closest('.publication-card');
+                        if (card) {
+                            card.classList.add('favorited');
+                        }
+                    }
+                    
+                    // Ajouter l'événement de clic
+                    icon.addEventListener('click', (e) => this.toggleFavorite(e));
+                });
+            }
+
+            getFavorites() {
+                const favorites = localStorage.getItem(this.storageKey);
+                return favorites ? JSON.parse(favorites) : [];
+            }
+
+            saveFavorites() {
+                localStorage.setItem(this.storageKey, JSON.stringify([...this.favorites]));
+            }
+
+            toggleFavorite(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                const icon = event.currentTarget;
+                const publicationId = icon.dataset.publicationId;
+                const card = icon.closest('.publication-card');
+                
+                if (this.favorites.has(publicationId)) {
+                    // Retirer des favoris
+                    this.favorites.delete(publicationId);
+                    icon.classList.remove('active');
+                    icon.title = 'Add to favorites';
+                    
+                    if (card) {
+                        card.classList.remove('favorited');
+                    }
+                    
+                    // Animation de suppression
+                    icon.style.animation = 'none';
+                    setTimeout(() => {
+                        icon.style.animation = 'heartBeat 0.5s ease reverse';
+                    }, 10);
+                } else {
+                    // Ajouter aux favoris
+                    this.favorites.add(publicationId);
+                    icon.classList.add('active');
+                    icon.title = 'Remove from favorites';
+                    
+                    if (card) {
+                        card.classList.add('favorited');
+                    }
+                    
+                    // Animation d'ajout
+                    icon.style.animation = 'heartBeat 0.5s ease';
+                }
+                
+                // Sauvegarder dans localStorage
+                this.saveFavorites();
+                
+                // Notification visuelle
+                this.showNotification(this.favorites.has(publicationId));
+            }
+
+            showNotification(isAdded) {
+                // Créer une notification temporaire
+                const notification = document.createElement('div');
+                notification.className = 'position-fixed bottom-0 end-0 m-3 p-3 rounded';
+                notification.style.backgroundColor = isAdded ? 'var(--warning)' : 'var(--primary)';
+                notification.style.color = 'white';
+                notification.style.zIndex = '9999';
+                notification.style.transition = 'transform 0.3s ease';
+                notification.innerHTML = `
+                    <i class="fas fa-${isAdded ? 'star' : 'star-half-alt'} me-2"></i>
+                    ${isAdded ? 'Added to favorites!' : 'Removed from favorites!'}
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Animer l'entrée
+                setTimeout(() => {
+                    notification.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Supprimer après 3 secondes
+                setTimeout(() => {
+                    notification.style.transform = 'translateY(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        // ============================================
+        // 3. SYSTÈME DE SIGNALEMENT INTELLIGENT
+        // ============================================
+        class ReportSystem {
+            constructor() {
+                this.storageKey = 'reportedPublications';
+                this.reports = this.getReports();
+                this.currentPublicationId = null;
+                this.selectedReason = null;
+                this.init();
+            }
+
+            init() {
+                // Événements pour le modal de signalement
+                const reportModal = document.getElementById('reportModal');
+                if (reportModal) {
+                    reportModal.addEventListener('show.bs.modal', (e) => {
+                        const button = e.relatedTarget;
+                        this.currentPublicationId = button.dataset.publicationId;
+                    });
+                    
+                    reportModal.addEventListener('hidden.bs.modal', () => {
+                        this.resetModal();
+                    });
+                }
+                
+                // Sélection des raisons
+                document.querySelectorAll('.report-reason').forEach(reason => {
+                    reason.addEventListener('click', (e) => this.selectReason(e));
+                });
+                
+                // Soumission du signalement
+                const submitBtn = document.getElementById('submitReport');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', () => this.submitReport());
+                }
+            }
+
+            getReports() {
+                const reports = localStorage.getItem(this.storageKey);
+                return reports ? JSON.parse(reports) : {};
+            }
+
+            saveReports() {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.reports));
+            }
+
+            selectReason(event) {
+                // Retirer la sélection précédente
+                document.querySelectorAll('.report-reason').forEach(r => {
+                    r.classList.remove('selected');
+                });
+                
+                // Sélectionner la nouvelle raison
+                const reason = event.currentTarget;
+                reason.classList.add('selected');
+                this.selectedReason = reason.dataset.reason;
+            }
+
+            submitReport() {
+                if (!this.currentPublicationId || !this.selectedReason) {
+                    alert('Please select a reason for reporting.');
+                    return;
+                }
+                
+                // Enregistrer le signalement
+                if (!this.reports[this.currentPublicationId]) {
+                    this.reports[this.currentPublicationId] = {
+                        count: 0,
+                        reasons: {},
+                        lastReported: null
+                    };
+                }
+                
+                this.reports[this.currentPublicationId].count++;
+                this.reports[this.currentPublicationId].reasons[this.selectedReason] = 
+                    (this.reports[this.currentPublicationId].reasons[this.selectedReason] || 0) + 1;
+                this.reports[this.currentPublicationId].lastReported = new Date().toISOString();
+                
+                // Informations supplémentaires
+                const additionalInfo = document.getElementById('reportAdditionalInfo').value;
+                if (additionalInfo.trim()) {
+                    this.reports[this.currentPublicationId].additionalInfo = additionalInfo.trim();
+                }
+                
+                // Sauvegarder
+                this.saveReports();
+                
+                // Fermer le modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+                modal.hide();
+                
+                // Afficher le feedback
+                this.showReportFeedback();
+                
+                // Si le nombre de signalements dépasse un seuil, alerter l'utilisateur
+                if (this.reports[this.currentPublicationId].count >= 3) {
+                    this.showHighReportWarning();
+                }
+            }
+
+            showReportFeedback() {
+                // Créer un feedback temporaire
+                const feedback = document.createElement('div');
+                feedback.className = 'position-fixed bottom-0 start-50 translate-middle-x m-3 p-3 rounded';
+                feedback.style.backgroundColor = 'var(--success)';
+                feedback.style.color = 'white';
+                feedback.style.zIndex = '9999';
+                feedback.style.transform = 'translateX(-50%) translateY(100%)';
+                feedback.style.transition = 'transform 0.3s ease';
+                feedback.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    Thank you for your report. Our team will review it shortly.
+                `;
+                
+                document.body.appendChild(feedback);
+                
+                // Animer l'entrée
+                setTimeout(() => {
+                    feedback.style.transform = 'translateX(-50%) translateY(0)';
+                }, 10);
+                
+                // Supprimer après 3 secondes
+                setTimeout(() => {
+                    feedback.style.transform = 'translateX(-50%) translateY(100%)';
+                    setTimeout(() => feedback.remove(), 300);
+                }, 3000);
+            }
+
+            showHighReportWarning() {
+                // Avertir que la publication a reçu plusieurs signalements
+                const warning = document.createElement('div');
+                warning.className = 'position-fixed top-50 start-50 translate-middle p-4 rounded';
+                warning.style.backgroundColor = 'rgba(239, 68, 68, 0.95)';
+                warning.style.color = 'white';
+                warning.style.zIndex = '10000';
+                warning.style.maxWidth = '400px';
+                warning.style.textAlign = 'center';
+                warning.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.3)';
+                warning.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                    <h5>High Report Count</h5>
+                    <p>This publication has received multiple reports and is under review.</p>
+                    <button class="btn btn-light mt-3" onclick="this.parentElement.remove()">
+                        I understand
+                    </button>
+                `;
+                
+                document.body.appendChild(warning);
+            }
+
+            resetModal() {
+                // Réinitialiser le modal
+                this.selectedReason = null;
+                this.currentPublicationId = null;
+                
+                document.querySelectorAll('.report-reason').forEach(r => {
+                    r.classList.remove('selected');
+                });
+                
+                document.getElementById('reportAdditionalInfo').value = '';
+            }
+
+            getReportStats(publicationId) {
+                return this.reports[publicationId] || null;
+            }
+        }
+
+        // ============================================
+        // 4. VALIDATION DU FORMULAIRE
+        // ============================================
         class PublicationModalValidator {
             constructor() {
                 this.postText = document.getElementById('postTextModal');
@@ -1728,9 +2004,9 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 
                 // Changer la couleur selon le nombre de caractères
                 if (charCount > this.maxChars * 0.8) {
-                    this.charCounter.style.color = '#ec4899';
+                    this.charCounter.style.color = 'var(--accent)';
                 } else {
-                    this.charCounter.style.color = '#e2e8f0';
+                    this.charCounter.style.color = 'var(--light)';
                 }
                 
                 // Limiter automatiquement à 200 caractères
@@ -1821,7 +2097,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 if (content === '') {
                     this.textError.textContent = 'Please enter your publication content.';
                     this.textError.style.display = 'block';
-                    this.postText.style.borderColor = '#ec4899';
+                    this.postText.style.borderColor = 'var(--accent)';
                     isValid = false;
                 }
                 
@@ -1829,7 +2105,7 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 if (content.length > this.maxChars) {
                     this.textError.textContent = `Publication cannot exceed ${this.maxChars} characters.`;
                     this.textError.style.display = 'block';
-                    this.postText.style.borderColor = '#ec4899';
+                    this.postText.style.borderColor = 'var(--accent)';
                     isValid = false;
                 }
                 
@@ -1877,7 +2153,9 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             }
         }
 
-        // Système de réactions avec JavaScript
+        // ============================================
+        // 5. SYSTÈME DE RÉACTIONS
+        // ============================================
         class ReactionSystem {
             constructor() {
                 this.init();
@@ -1887,25 +2165,6 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 // Initialiser les événements pour tous les boutons de réaction
                 document.querySelectorAll('.reaction-btn').forEach(btn => {
                     btn.addEventListener('click', this.handleReaction.bind(this));
-                });
-
-                // Gestion du double-clic
-                document.querySelectorAll('.reaction-btn').forEach(btn => {
-                    let clickCount = 0;
-                    btn.addEventListener('click', (e) => {
-                        clickCount++;
-                        if (clickCount === 1) {
-                            setTimeout(() => {
-                                if (clickCount === 1) {
-                                    // Simple click - déjà géré par handleReaction
-                                } else {
-                                    // Double click - supprimer la réaction
-                                    this.handleDoubleClick(e);
-                                }
-                                clickCount = 0;
-                            }, 300);
-                        }
-                    });
                 });
             }
 
@@ -1934,19 +2193,6 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                     alert('Erreur de connexion');
                 } finally {
                     button.disabled = false;
-                }
-            }
-
-            async handleDoubleClick(event) {
-                const button = event.currentTarget;
-                const publicationId = button.dataset.publicationId;
-                const userId = button.dataset.userId;
-                const reactionType = button.dataset.reactionType;
-                
-                // Vérifier si le bouton est déjà actif (double-clic sur la même réaction)
-                if (button.classList.contains('active')) {
-                    // Simuler un clic pour supprimer la réaction
-                    await this.handleReaction(event);
                 }
             }
 
@@ -1992,235 +2238,9 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             }
         }
 
-        // NOUVEAU CODE POUR L'ASSISTANT AI AVEC CHATGPT RÉEL
-        class AIAssistant {
-            constructor() {
-                this.modal = null;
-                this.currentPublicationId = null;
-                this.currentPublicationText = null;
-                this.chatHistory = [];
-                this.maxChatHistory = 10; // Limiter l'historique
-                this.init();
-            }
-
-            init() {
-                // Initialiser tous les boutons AI
-                document.addEventListener('click', (e) => {
-                    if (e.target.closest('.ai-assistant-btn')) {
-                        const btn = e.target.closest('.ai-assistant-btn');
-                        this.openAssistant(btn);
-                    }
-                });
-
-                // Gérer la soumission du formulaire
-                const aiForm = document.getElementById('aiQuestionForm');
-                if (aiForm) {
-                    aiForm.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        this.submitQuestion();
-                    });
-                }
-
-                // Initialiser le modal
-                const aiModalElement = document.getElementById('aiAssistantModal');
-                if (aiModalElement) {
-                    this.modal = new bootstrap.Modal(aiModalElement);
-                }
-            }
-
-            openAssistant(button) {
-                const publicationCard = button.closest('.publication-card');
-                const publicationId = button.dataset.publicationId;
-                const publicationText = publicationCard.querySelector('.publication-content').textContent;
-                
-                // Stocker les informations
-                this.currentPublicationId = publicationId;
-                this.currentPublicationText = publicationText;
-                
-                // Mettre à jour le modal
-                document.getElementById('aiPublicationPreview').textContent = 
-                    publicationText.length > 200 ? 
-                    publicationText.substring(0, 200) + '...' : 
-                    publicationText;
-                document.getElementById('aiPublicationId').value = publicationId;
-                document.getElementById('aiPublicationText').value = publicationText;
-                
-                // Effacer l'historique précédent
-                this.clearChatHistory();
-                
-                // Afficher le modal
-                if (this.modal) {
-                    this.modal.show();
-                }
-                
-                // Focus sur l'input
-                setTimeout(() => {
-                    const questionInput = document.getElementById('aiQuestionInput');
-                    if (questionInput) {
-                        questionInput.focus();
-                    }
-                }, 500);
-            }
-
-            clearChatHistory() {
-                this.chatHistory = [];
-                const chatHistoryElement = document.getElementById('aiChatHistory');
-                if (chatHistoryElement) {
-                    chatHistoryElement.innerHTML = '';
-                }
-            }
-
-            formatAIResponse(text) {
-                // Formater la réponse AI pour afficher le code correctement
-                let formattedText = text;
-                
-                // Détecter les blocs de code
-                const codeBlocks = text.match(/```([\s\S]*?)```/g);
-                if (codeBlocks) {
-                    codeBlocks.forEach((block, index) => {
-                        const codeContent = block.replace(/```[\w]*\n?/g, '').replace(/```/g, '');
-                        const formattedBlock = `<div class="ai-code-block">${codeContent}</div>`;
-                        formattedText = formattedText.replace(block, formattedBlock);
-                    });
-                }
-                
-                // Détecter les notes importantes
-                if (text.includes('Important:') || text.includes('Attention:')) {
-                    formattedText = formattedText.replace(/(Important:|Attention:)(.*?)(\n\n|$)/g, 
-                        '<div class="ai-warning"><strong>$1</strong>$2</div>');
-                }
-                
-                // Détecter les conseils
-                if (text.includes('Conseil:') || text.includes('Tip:')) {
-                    formattedText = formattedText.replace(/(Conseil:|Tip:)(.*?)(\n\n|$)/g, 
-                        '<div class="ai-tip"><strong>$1</strong>$2</div>');
-                }
-                
-                return formattedText;
-            }
-
-            addMessageToHistory(type, content, timestamp = null) {
-                const chatHistoryElement = document.getElementById('aiChatHistory');
-                if (!chatHistoryElement) return;
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `ai-message ai-${type}`;
-                
-                const icon = type === 'question' ? 'fas fa-user' : 'fas fa-robot';
-                const label = type === 'question' ? 'Your question' : 'AI Assistant';
-                const formattedContent = type === 'answer' ? this.formatAIResponse(content) : content;
-                
-                messageDiv.innerHTML = `
-                    <div class="d-flex align-items-start mb-2">
-                        <i class="${icon} me-2" style="color: ${type === 'question' ? '#6366f1' : '#10b981'}"></i>
-                        <strong class="text-light">${label}</strong>
-                    </div>
-                    <div class="text-light">${formattedContent}</div>
-                    ${timestamp ? `<div class="ai-timestamp">${timestamp}</div>` : ''}
-                `;
-                
-                chatHistoryElement.appendChild(messageDiv);
-                chatHistoryElement.scrollTop = chatHistoryElement.scrollHeight;
-                
-                // Garder l'historique en mémoire
-                this.chatHistory.push({
-                    type: type,
-                    content: content,
-                    timestamp: timestamp || new Date().toLocaleTimeString()
-                });
-                
-                // Limiter la taille de l'historique
-                if (this.chatHistory.length > this.maxChatHistory) {
-                    this.chatHistory.shift();
-                }
-            }
-
-            async submitQuestion() {
-                const questionInput = document.getElementById('aiQuestionInput');
-                const question = questionInput.value.trim();
-                
-                if (!question) {
-                    alert('Please enter a question');
-                    return;
-                }
-                
-                // Validation de la longueur de la question
-                if (question.length > 500) {
-                    alert('Question is too long. Maximum 500 characters.');
-                    return;
-                }
-                
-                // Ajouter la question à l'historique
-                this.addMessageToHistory('question', question, new Date().toLocaleTimeString());
-                
-                // Effacer l'input
-                questionInput.value = '';
-                
-                // Afficher l'indicateur de chargement
-                const thinkingElement = document.getElementById('aiThinking');
-                if (thinkingElement) {
-                    thinkingElement.style.display = 'block';
-                }
-                
-                // Désactiver le bouton de soumission
-                const submitButton = document.querySelector('#aiQuestionForm button[type="submit"]');
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-                }
-                
-                try {
-                    // Envoyer la requête au serveur
-                    const formData = new FormData();
-                    formData.append('ai_question', question);
-                    formData.append('publication_id', this.currentPublicationId);
-                    formData.append('publication_text', this.currentPublicationText);
-                    
-                    const response = await fetch(window.location.href, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        // Ajouter la réponse AI à l'historique
-                        this.addMessageToHistory('answer', data.response, data.timestamp);
-                    } else {
-                        throw new Error(data.response || 'AI Assistant error');
-                    }
-                } catch (error) {
-                    console.error('AI Assistant error:', error);
-                    
-                    // En cas d'erreur, fournir une réponse de secours
-                    const fallbackResponse = `I apologize, but I'm currently experiencing technical difficulties. Here's some general cybersecurity advice:\n\n` +
-                        `1. Always keep your software updated\n` +
-                        `2. Use strong, unique passwords for each account\n` +
-                        `3. Enable two-factor authentication whenever possible\n` +
-                        `4. Be cautious with email attachments and links\n` +
-                        `5. Regularly backup your important data\n\n` +
-                        `Error details: ${error.message}`;
-                    
-                    this.addMessageToHistory('answer', fallbackResponse, new Date().toLocaleTimeString());
-                } finally {
-                    // Cacher l'indicateur de chargement
-                    if (thinkingElement) {
-                        thinkingElement.style.display = 'none';
-                    }
-                    
-                    // Réactiver le bouton de soumission
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Ask AI Assistant';
-                    }
-                }
-            }
-        }
-
-        // Section Navigation
+        // ============================================
+        // 6. NAVIGATION DES SECTIONS
+        // ============================================
         const mesSection = document.getElementById('mes-publications-section');
         const feedSection = document.getElementById('feed-section');
         const returnToFeed = document.getElementById('returnToFeed');
@@ -2243,7 +2263,6 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             window.history.pushState({}, '', url);
         }
 
-        // Fonction pour afficher mes publications depuis le dropdown
         function showMyPublications() {
             showSection('mes');
             // Fermer le dropdown
@@ -2261,8 +2280,11 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
             });
         }
 
-        // Vérifier l'état initial au chargement
+        // ============================================
+        // INITIALISATION AU CHARGEMENT
+        // ============================================
         document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier l'état initial des sections
             const urlParams = new URLSearchParams(window.location.search);
             const section = urlParams.get('section');
             
@@ -2272,57 +2294,34 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                 showSection('feed');
             }
 
-            // Initialiser les validateurs
-            new PublicationModalValidator();
-            new ReactionSystem();
-            
-            // Initialiser l'assistant AI avec ChatGPT réel
-            window.aiAssistant = new AIAssistant();
+            // Initialiser tous les systèmes
+            const themeManager = new ThemeManager();
+            const favoriteSystem = new FavoriteSystem();
+            const reportSystem = new ReportSystem();
+            const validator = new PublicationModalValidator();
+            const reactionSystem = new ReactionSystem();
 
-            // Réinitialiser le modal quand il est fermé
+            // Réinitialiser le modal de publication quand il est fermé
             const addPublicationModal = document.getElementById('addPublicationModal');
             if (addPublicationModal) {
                 addPublicationModal.addEventListener('hidden.bs.modal', function() {
-                    // Réinitialiser le formulaire
                     document.getElementById('formPublicationModal').reset();
                     document.getElementById('charCounterModal').textContent = '0/200 characters';
-                    document.getElementById('charCounterModal').style.color = '#e2e8f0';
+                    document.getElementById('charCounterModal').style.color = 'var(--light)';
                     document.getElementById('textErrorModal').style.display = 'none';
                     
-                    // Réinitialiser l'affichage du fichier
                     const fileInputLabel = document.getElementById('fileInputLabelModal');
                     fileInputLabel.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Choose a file to upload';
                     fileInputLabel.style.background = 'rgba(255, 255, 255, 0.05)';
                     fileInputLabel.style.borderColor = 'rgba(99, 102, 241, 0.3)';
                     fileInputLabel.style.color = 'rgba(226, 232, 240, 0.7)';
                     
-                    // Réactiver le bouton de soumission
                     document.getElementById('submitButtonModal').disabled = false;
                     document.getElementById('submitButtonModal').innerHTML = '<i class="fas fa-paper-plane me-2"></i>Publish';
                 });
             }
-            
-            // Réinitialiser le modal AI quand il est fermé
-            const aiModal = document.getElementById('aiAssistantModal');
-            if (aiModal) {
-                aiModal.addEventListener('hidden.bs.modal', function() {
-                    // Réinitialiser le formulaire AI
-                    document.getElementById('aiQuestionForm').reset();
-                    const thinkingElement = document.getElementById('aiThinking');
-                    if (thinkingElement) {
-                        thinkingElement.style.display = 'none';
-                    }
-                    
-                    // Réactiver le bouton de soumission
-                    const submitButton = document.querySelector('#aiQuestionForm button[type="submit"]');
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Ask AI Assistant';
-                    }
-                });
-            }
 
-            // Confirmation pour la suppression des commentaires
+            // Confirmation pour la suppression
             document.querySelectorAll('.btn-delete-comment').forEach(button => {
                 button.addEventListener('click', function(e) {
                     if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
@@ -2330,7 +2329,35 @@ $feedPublications = array_slice($feedPublicationsAll, $feedOffset, $feedLimit);
                     }
                 });
             });
+            
+            // Exposer la fonction showMyPublications globalement pour le dropdown
+            window.showMyPublications = showMyPublications;
         });
+                // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('../../controller/UserController.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=logout'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = 'http://localhost/Ai-ShieldHub/View/FutureAi/index.php';
+                    } else {
+                        alert('Logout failed. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Fallback: redirect anyway
+                    window.location.href = 'http://localhost/Ai-ShieldHub/View/FutureAi/index.php';
+                });
+            }
+        }
     </script>
 </body>
 </html>

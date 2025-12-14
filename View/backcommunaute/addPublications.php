@@ -754,7 +754,7 @@ $publications = $pubController->listAdminPublications($limit, $offset);
           <div class="main-header-logo">
             <!-- Logo Header -->
             <div class="logo-header" data-background-color="dark">
-              <a href="index.php" class="logo nav-link" data-page="dashboard">
+              <a href="http://localhost/Ai-ShieldHub/View/back/kaiadmin-lite-1.2.0/index.php" class="logo nav-link" data-page="dashboard">
                 <img
                   src="assets/img/kaiadmin/logo_light.svg"
                   alt="navbar brand"
