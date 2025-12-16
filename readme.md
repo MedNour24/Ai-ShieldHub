@@ -22,10 +22,3 @@
 - **Multi-tenancy Support**: Secure isolation for different organizations or departments
 
 ## 📋 Prerequisites
-
-Before installation, ensure you have:
-- **Node.js** 16.x or higher
-- **Python** 3.8 or higher (for AI/ML components)
-- **PostgreSQL** 12+ or **MongoDB** 4.4+
-- **Redis** 6.0+ (for caching and queues)
-- **Docker** and **Docker Compose** (optional, for
