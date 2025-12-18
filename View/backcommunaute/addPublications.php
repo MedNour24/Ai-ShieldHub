@@ -754,7 +754,7 @@ $publications = $pubController->listAdminPublications($limit, $offset);
           <div class="main-header-logo">
             <!-- Logo Header -->
             <div class="logo-header" data-background-color="dark">
-              <a href="index.php" class="logo nav-link" data-page="dashboard">
+              <a href="http://localhost/Ai-ShieldHub/View/back/kaiadmin-lite-1.2.0/index.php" class="logo nav-link" data-page="dashboard">
                 <img
                   src="assets/img/kaiadmin/logo_light.svg"
                   alt="navbar brand"
@@ -882,7 +882,7 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                                 <i class="fas fa-user"></i>
                               </div>
                               <div>
-                                <div class="publication-author"><?= htmlspecialchars($p['nom']) ?></div>
+                                <div class="publication-author"><?= htmlspecialchars($p['name']) ?></div>
                                 <div class="publication-date"><?= date('M j, Y \a\t g:i A', strtotime($p['date_publication'])) ?></div>
                               </div>
                             </div>
@@ -1562,11 +1562,11 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                   <div class="d-flex align-items-center">
                       <div class="avatar-sm mr-3">
                       <div class="avatar-title rounded-circle bg-primary text-white" style="width: 35px; height: 35px; line-height: 35px;">
-                          ${pub.nom ? pub.nom.charAt(0).toUpperCase() : 'U'}
+                          ${pub.name ? pub.name.charAt(0).toUpperCase() : 'U'}
                       </div>
                       </div>
                       <div>
-                      <div class="font-weight-bold">${escapeHtml(pub.nom || 'Unknown User')}</div>
+                      <div class="font-weight-bold">${escapeHtml(pub.name || 'Unknown User')}</div>
                       <small class="text-muted">${escapeHtml(pub.email || '')}</small>
                       </div>
                   </div>
@@ -1587,7 +1587,7 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                       <button class="btn btn-sm btn-info btn-action btn-view" 
                               data-id="${pub.id_publication}"
                               data-content="${escapeHtml(pub.texte)}"
-                              data-author="${escapeHtml(pub.nom)}"
+                              data-author="${escapeHtml(pub.name)}"
                               data-date="${pub.date_publication}"
                               data-file="${pub.fichier || ''}"
                               title="View Details">
@@ -1595,7 +1595,7 @@ $publications = $pubController->listAdminPublications($limit, $offset);
                       </button>
                       <button class="btn btn-sm btn-danger btn-action btn-delete-pub" 
                               data-id="${pub.id_publication}"
-                              data-author="${escapeHtml(pub.nom)}"
+                              data-author="${escapeHtml(pub.name)}"
                               title="Delete">
                       <i class="fas fa-trash"></i>
                       </button>
