@@ -257,19 +257,25 @@ class TeamController
     }
     
     /**
+     * Process teams data to decode members JSON and calculate total
+     */
+    private function processTeamsData(array $teams): array
+    {
+        return array_map(function($team) {
+            $team['members'] = json_decode($team['members'], true) ?: [];
+            $team['total_members'] = count($team['members']) + 1;
+            return $team;
+        }, $teams);
+    }
+    
+    /**
      * List all teams
      */
     private function listAction(): void
     {
         try {
             $teams = $this->team->listAll();
-            
-            // Process members JSON and enrich data
-            $teams = array_map(function($team) {
-                $team['members'] = json_decode($team['members'], true) ?: [];
-                $team['total_members'] = count($team['members']) + 1;
-                return $team;
-            }, $teams);
+            $teams = $this->processTeamsData($teams);
             
             $this->sendJsonResponse(true, "Liste récupérée", [
                 'teams' => $teams,
@@ -288,12 +294,7 @@ class TeamController
         try {
             $id_tournoi = $this->validateId($_GET['id_tournoi'] ?? null);
             $teams = $this->team->listByTournoi($id_tournoi);
-            
-            $teams = array_map(function($team) {
-                $team['members'] = json_decode($team['members'], true) ?: [];
-                $team['total_members'] = count($team['members']) + 1;
-                return $team;
-            }, $teams);
+            $teams = $this->processTeamsData($teams);
             
             $this->sendJsonResponse(true, "Liste récupérée", [
                 'teams' => $teams,
@@ -316,12 +317,7 @@ class TeamController
             }
             
             $teams = $this->team->listByCategory($category);
-            
-            $teams = array_map(function($team) {
-                $team['members'] = json_decode($team['members'], true) ?: [];
-                $team['total_members'] = count($team['members']) + 1;
-                return $team;
-            }, $teams);
+            $teams = $this->processTeamsData($teams);
             
             $this->sendJsonResponse(true, "Liste récupérée", [
                 'teams' => $teams,
@@ -344,12 +340,7 @@ class TeamController
             }
             
             $teams = $this->team->search($keyword);
-            
-            $teams = array_map(function($team) {
-                $team['members'] = json_decode($team['members'], true) ?: [];
-                $team['total_members'] = count($team['members']) + 1;
-                return $team;
-            }, $teams);
+            $teams = $this->processTeamsData($teams);
             
             $this->sendJsonResponse(true, "Résultats de recherche", [
                 'teams' => $teams,

@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../Model/Publication.php';
+require_once __DIR__ . '/BaseController.php';
 
-class PublicationController {
+class PublicationController extends BaseController {
    
     // ========== MÉTHODES COMMUNES ==========
 
@@ -11,8 +12,7 @@ class PublicationController {
         try {
             $sql = "INSERT INTO publication (id_utilisateur, texte, fichier, type_fichier, date_publication) 
                     VALUES (:id_utilisateur, :texte, :fichier, :type_fichier, :date_publication)";
-            $db = config::getConnexion();
-            $query = $db->prepare($sql);
+            $query = $this->db->prepare($sql);
             
             $success = $query->execute([
                 'id_utilisateur' => $p->getIdUtilisateur(),
@@ -28,7 +28,7 @@ class PublicationController {
                 throw new Exception("Erreur lors de l'insertion dans la base de données");
             }
             
-            return $db->lastInsertId(); // Retourne l'ID de la publication insérée
+            return $this->db->lastInsertId(); // Retourne l'ID de la publication insérée
             
         } catch (Exception $e) {
             error_log("Erreur addPublication: " . $e->getMessage());
@@ -42,8 +42,7 @@ class PublicationController {
                 FROM publication p
                 JOIN users u ON p.id_utilisateur = u.id
                 WHERE p.id_publication = :id";
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
+        $query = $this->db->prepare($sql);
         $query->execute(['id' => $id_publication]);
         return $query->fetch(PDO::FETCH_ASSOC);
     }
@@ -58,8 +57,7 @@ class PublicationController {
                     fichier = :fichier,
                     type_fichier = :type_fichier
                 WHERE id_publication = :id";
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
+        $query = $this->db->prepare($sql);
         $query->execute([
             'id' => $publicationId,
             'texte' => $p->getTexte(),
@@ -70,40 +68,38 @@ class PublicationController {
 
     // Supprimer une publication (CORRIGÉ avec gestion des contraintes)
     public function deletePublication($id_publication) {
-        $db = config::getConnexion();
-        
         try {
             // Démarrer une transaction
-            $db->beginTransaction();
+            $this->db->beginTransaction();
             
             // 1. Supprimer d'abord les réactions associées
             $sqlReactions = "DELETE FROM reaction WHERE id_publication = :id";
-            $queryReactions = $db->prepare($sqlReactions);
+            $queryReactions = $this->db->prepare($sqlReactions);
             $queryReactions->execute(['id' => $id_publication]);
             
             // 2. Supprimer d'abord les commentaires associés
             $sqlComments = "DELETE FROM commentaire WHERE id_publication = :id";
-            $queryComments = $db->prepare($sqlComments);
+            $queryComments = $this->db->prepare($sqlComments);
             $queryComments->execute(['id' => $id_publication]);
             
             // 3. Supprimer d'abord l'historique associé
             $sqlHistory = "DELETE FROM historique_publication WHERE id_publication = :id";
-            $queryHistory = $db->prepare($sqlHistory);
+            $queryHistory = $this->db->prepare($sqlHistory);
             $queryHistory->execute(['id' => $id_publication]);
             
             // 4. Maintenant supprimer la publication
             $sql = "DELETE FROM publication WHERE id_publication = :id";
-            $query = $db->prepare($sql);
+            $query = $this->db->prepare($sql);
             $query->execute(['id' => $id_publication]);
             
             // Valider la transaction
-            $db->commit();
+            $this->db->commit();
             
             return true;
             
         } catch (Exception $e) {
             // Annuler la transaction en cas d'erreur
-            $db->rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
@@ -119,8 +115,6 @@ class PublicationController {
      * @return array
      */
     public function getFilIntelligent($mode = 'recent') {
-        $db = config::getConnexion();
-
         $sql = "SELECT p.*, u.name,
                        (SELECT COUNT(*) FROM reaction r WHERE r.id_publication = p.id_publication AND r.type_reaction = 'like') AS nb_likes,
                        (SELECT COUNT(*) FROM commentaire c WHERE c.id_publication = p.id_publication) AS nb_commentaires
@@ -154,7 +148,7 @@ class PublicationController {
                 break;
         }
 
-        $query = $db->prepare($sql);
+        $query = $this->db->prepare($sql);
         $query->execute();
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -171,13 +165,11 @@ class PublicationController {
             $sql .= " LIMIT :limit OFFSET :offset";
         }
 
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
+        $query = $this->db->prepare($sql);
         $query->bindValue(':idUser', $idUser, PDO::PARAM_INT);
 
         if ($limit !== null && $offset !== null) {
-            $query->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $this->bindPaginationParams($query, $limit, $offset);
         }
 
         $query->execute();
@@ -189,8 +181,7 @@ class PublicationController {
         if ($id_utilisateur) {
             // Version front : compter pour un utilisateur spécifique
             $sql = "SELECT COUNT(*) AS total FROM publication WHERE id_utilisateur = :id_utilisateur";
-            $db = config::getConnexion();
-            $query = $db->prepare($sql);
+            $query = $this->db->prepare($sql);
             $query->execute(['id_utilisateur' => $id_utilisateur]);
             return $query->fetch(PDO::FETCH_ASSOC)['total'];
         } else {
@@ -199,8 +190,7 @@ class PublicationController {
                     FROM publication p
                     JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
                     WHERE u.role = 'user'";
-            $db = config::getConnexion();
-            $result = $db->query($sql)->fetch(PDO::FETCH_ASSOC);
+            $result = $this->db->query($sql)->fetch(PDO::FETCH_ASSOC);
             return $result['total'];
         }
     }
@@ -213,10 +203,8 @@ class PublicationController {
                 ORDER BY id_publication DESC
                 LIMIT :limit OFFSET :offset";
 
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
-        $query->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $query = $this->db->prepare($sql);
+        $this->bindPaginationParams($query, $limit, $offset);
         $query->execute();
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -232,10 +220,8 @@ class PublicationController {
                 ORDER BY p.id_publication DESC
                 LIMIT :limit OFFSET :offset";
 
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
-        $query->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $query = $this->db->prepare($sql);
+        $this->bindPaginationParams($query, $limit, $offset);
         $query->execute();
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -249,10 +235,8 @@ class PublicationController {
                 ORDER BY p.id_publication DESC
                 LIMIT :limit OFFSET :offset";
 
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
-        $query->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $query = $this->db->prepare($sql);
+        $this->bindPaginationParams($query, $limit, $offset);
         $query->execute();
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -260,8 +244,7 @@ class PublicationController {
     // Compter toutes les publications
     public function countAllPublications() {
         $sql = "SELECT COUNT(*) AS total FROM publication";
-        $db = config::getConnexion();
-        return $db->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
+        return $this->db->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
     }
 
     // Récupérer les réactions d'une publication
@@ -271,8 +254,7 @@ class PublicationController {
                 WHERE id_publication = :id
                 GROUP BY type_reaction";
 
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
+        $query = $this->db->prepare($sql);
         $query->execute(['id' => $id_publication]);
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -283,8 +265,7 @@ class PublicationController {
                 (id_publication, texte, fichier, type_fichier, date_modification, id_utilisateur)
                 VALUES (:id_publication, :texte, :fichier, :type_fichier, NOW(), :id_utilisateur)";
 
-        $db = config::getConnexion();
-        $query = $db->prepare($sql);
+        $query = $this->db->prepare($sql);
         $query->execute([
             'id_publication' => $p->getIdPublication(),
             'texte' => $p->getTexte(),

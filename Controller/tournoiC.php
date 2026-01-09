@@ -1,16 +1,16 @@
 <?php
 require_once __DIR__ . '/../Model/Tournoi.php';
+require_once __DIR__ . '/BaseController.php';
 
-class TournoiC
+class TournoiC extends BaseController
 {
     // CREATE
     public function ajouterTournoi(Tournoi $tournoi): bool
     {
-        try {
-            $pdo = config::getConnexion();
+        return $this->executeQuery(function($db) use ($tournoi) {
             $sql = "INSERT INTO tournoi (nom, theme, niveau, date_debut, date_fin) 
                     VALUES (:nom, :theme, :niveau, :date_debut, :date_fin)";
-            $stmt = $pdo->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute([
                 ':nom' => $tournoi->getNom(),
                 ':theme' => $tournoi->getTheme(),
@@ -19,19 +19,15 @@ class TournoiC
                 ':date_fin' => $tournoi->getDateFin()
             ]);
             return true;
-        } catch (PDOException $e) {
-            error_log("Erreur ajout tournoi: " . $e->getMessage());
-            return false;
-        }
+        }, false, "Erreur ajout tournoi");
     }
 
     // READ ALL
     public function afficherTournois(): array
     {
-        try {
-            $pdo = config::getConnexion();
+        return $this->executeQuery(function($db) {
             $sql = "SELECT * FROM tournoi ORDER BY date_debut DESC";
-            $stmt = $pdo->query($sql);
+            $stmt = $db->query($sql);
             $tournois = [];
             
             while ($row = $stmt->fetch()) {
@@ -45,19 +41,15 @@ class TournoiC
                 );
             }
             return $tournois;
-        } catch (PDOException $e) {
-            error_log("Erreur affichage tournois: " . $e->getMessage());
-            return [];
-        }
+        }, [], "Erreur affichage tournois");
     }
 
     // READ ONE
     public function getTournoiById(int $id): ?Tournoi
     {
-        try {
-            $pdo = config::getConnexion();
+        return $this->executeQuery(function($db) use ($id) {
             $sql = "SELECT * FROM tournoi WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute([':id' => $id]);
             $row = $stmt->fetch();
             
@@ -72,22 +64,18 @@ class TournoiC
                 );
             }
             return null;
-        } catch (PDOException $e) {
-            error_log("Erreur récupération tournoi: " . $e->getMessage());
-            return null;
-        }
+        }, null, "Erreur récupération tournoi");
     }
 
     // UPDATE
     public function modifierTournoi(Tournoi $tournoi): bool
     {
-        try {
-            $pdo = config::getConnexion();
+        return $this->executeQuery(function($db) use ($tournoi) {
             $sql = "UPDATE tournoi 
                     SET nom = :nom, theme = :theme, niveau = :niveau, 
                         date_debut = :date_debut, date_fin = :date_fin 
                     WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute([
                 ':id' => $tournoi->getId(),
                 ':nom' => $tournoi->getNom(),
@@ -97,25 +85,18 @@ class TournoiC
                 ':date_fin' => $tournoi->getDateFin()
             ]);
             return true;
-        } catch (PDOException $e) {
-            error_log("Erreur modification tournoi: " . $e->getMessage());
-            return false;
-        }
+        }, false, "Erreur modification tournoi");
     }
 
     // DELETE
     public function supprimerTournoi(int $id): bool
     {
-        try {
-            $pdo = config::getConnexion();
+        return $this->executeQuery(function($db) use ($id) {
             $sql = "DELETE FROM tournoi WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute([':id' => $id]);
             return true;
-        } catch (PDOException $e) {
-            error_log("Erreur suppression tournoi: " . $e->getMessage());
-            return false;
-        }
+        }, false, "Erreur suppression tournoi");
     }
 
     // VALIDATION HELPER
