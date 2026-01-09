@@ -1,13 +1,14 @@
 <?php
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../Model/Reaction.php';
+require_once __DIR__ . '/BaseController.php';
 
-class ReactionController {
+class ReactionController extends BaseController {
 
     // === MÉTHODES POUR LE FRONT ET LE BACK ===
     
     public function addOrUpdateReaction(Reaction $r) {
-        $db = config::getConnexion();
+        $db = $this->db;
 
         // Vérifier si une réaction existe déjà
         $check = $db->prepare("SELECT * FROM reaction WHERE id_publication = :idPub AND id_utilisateur = :idUser");
@@ -55,11 +56,9 @@ class ReactionController {
     }
 
     public function countReactions($idPublication, $type) {
-        $sql = "SELECT COUNT(*) as count FROM reaction 
-                WHERE id_publication = :id AND type_reaction = :type";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) use ($idPublication, $type) {
+            $sql = "SELECT COUNT(*) as count FROM reaction 
+                    WHERE id_publication = :id AND type_reaction = :type";
             $query = $db->prepare($sql);
             $query->execute([
                 'id' => $idPublication,
@@ -67,18 +66,13 @@ class ReactionController {
             ]);
             $result = $query->fetch(PDO::FETCH_ASSOC);
             return $result['count'] ?? 0;
-        } catch (PDOException $e) {
-            error_log("Error counting reactions: " . $e->getMessage());
-            return 0;
-        }
+        }, 0, "Error counting reactions");
     }
 
     public function getUserReaction($idPublication, $idUser) {
-        $sql = "SELECT type_reaction FROM reaction 
-                WHERE id_publication = :idPub AND id_utilisateur = :idUser";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) use ($idPublication, $idUser) {
+            $sql = "SELECT type_reaction FROM reaction 
+                    WHERE id_publication = :idPub AND id_utilisateur = :idUser";
             $query = $db->prepare($sql);
             $query->execute([
                 'idPub' => $idPublication,
@@ -86,21 +80,16 @@ class ReactionController {
             ]);
             $result = $query->fetch(PDO::FETCH_ASSOC);
             return $result ? $result['type_reaction'] : null;
-        } catch (PDOException $e) {
-            error_log("Error getting user reaction: " . $e->getMessage());
-            return null;
-        }
+        }, null, "Error getting user reaction");
     }
 
     public function getReactionsSummary($idPublication) {
-        $db = config::getConnexion();
-        
-        $sql = "SELECT type_reaction, COUNT(*) as count 
-                FROM reaction 
-                WHERE id_publication = :idPub 
-                GROUP BY type_reaction";
-        
-        try {
+        return $this->executeQuery(function($db) use ($idPublication) {
+            $sql = "SELECT type_reaction, COUNT(*) as count 
+                    FROM reaction 
+                    WHERE id_publication = :idPub 
+                    GROUP BY type_reaction";
+            
             $query = $db->prepare($sql);
             $query->execute(['idPub' => $idPublication]);
             $results = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -111,63 +100,47 @@ class ReactionController {
             }
             
             return $summary;
-        } catch (PDOException $e) {
-            error_log("Error getting reactions summary: " . $e->getMessage());
-            return ['like' => 0, 'dislike' => 0];
-        }
+        }, ['like' => 0, 'dislike' => 0], "Error getting reactions summary");
     }
 
     // === MÉTHODES SPÉCIFIQUES POUR L'ADMINISTRATION ===
     
     public function getAllReactions($limit = 50, $offset = 0) {
-        $sql = "SELECT r.*, u.nom as utilisateur_nom, p.texte as publication_texte
-                FROM reaction r
-                JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
-                JOIN publication p ON r.id_publication = p.id_publication
-                ORDER BY r.date_reaction DESC
-                LIMIT :limit OFFSET :offset";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) use ($limit, $offset) {
+            $sql = "SELECT r.*, u.nom as utilisateur_nom, p.texte as publication_texte
+                    FROM reaction r
+                    JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
+                    JOIN publication p ON r.id_publication = p.id_publication
+                    ORDER BY r.date_reaction DESC
+                    LIMIT :limit OFFSET :offset";
+            
             $query = $db->prepare($sql);
-            $query->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $this->bindPaginationParams($query, $limit, $offset);
             $query->execute();
             return $query->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error getting all reactions: " . $e->getMessage());
-            return [];
-        }
+        }, [], "Error getting all reactions");
     }
 
     public function countAllReactions() {
-        $sql = "SELECT COUNT(*) as total FROM reaction";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) {
+            $sql = "SELECT COUNT(*) as total FROM reaction";
             $query = $db->prepare($sql);
             $query->execute();
             $result = $query->fetch(PDO::FETCH_ASSOC);
             return $result['total'] ?? 0;
-        } catch (PDOException $e) {
-            error_log("Error counting all reactions: " . $e->getMessage());
-            return 0;
-        }
+        }, 0, "Error counting all reactions");
     }
 
     public function deleteReaction($idReaction) {
         $sql = "DELETE FROM reaction WHERE id_reaction = :id";
-        $db = config::getConnexion();
-
+        
         try {
-            $query = $db->prepare($sql);
+            $query = $this->db->prepare($sql);
             $result = $query->execute(['id' => $idReaction]);
             
             // Gérer les requêtes AJAX
             if (isset($_POST['action']) && $_POST['action'] === 'deleteReaction') {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => $result]);
-                exit();
+                $this->sendJsonResponse($result, null);
             }
             
             return $result;
@@ -178,63 +151,48 @@ class ReactionController {
     }
 
     public function getReactionById($idReaction) {
-        $sql = "SELECT r.*, u.nom as utilisateur_nom, p.texte as publication_texte
-                FROM reaction r
-                JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
-                JOIN publication p ON r.id_publication = p.id_publication
-                WHERE r.id_reaction = :id";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) use ($idReaction) {
+            $sql = "SELECT r.*, u.nom as utilisateur_nom, p.texte as publication_texte
+                    FROM reaction r
+                    JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
+                    JOIN publication p ON r.id_publication = p.id_publication
+                    WHERE r.id_reaction = :id";
             $query = $db->prepare($sql);
             $query->execute(['id' => $idReaction]);
             return $query->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error getting reaction by ID: " . $e->getMessage());
-            return null;
-        }
+        }, null, "Error getting reaction by ID");
     }
 
     // Statistiques pour le dashboard admin
     public function getReactionsStats() {
-        $sql = "SELECT 
-                    type_reaction,
-                    COUNT(*) as total,
-                    DATE(date_reaction) as date,
-                    COUNT(DISTINCT id_utilisateur) as unique_users
-                FROM reaction 
-                WHERE date_reaction >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                GROUP BY type_reaction, DATE(date_reaction)
-                ORDER BY date DESC";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) {
+            $sql = "SELECT 
+                        type_reaction,
+                        COUNT(*) as total,
+                        DATE(date_reaction) as date,
+                        COUNT(DISTINCT id_utilisateur) as unique_users
+                    FROM reaction 
+                    WHERE date_reaction >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                    GROUP BY type_reaction, DATE(date_reaction)
+                    ORDER BY date DESC";
             $query = $db->prepare($sql);
             $query->execute();
             return $query->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error getting reactions stats: " . $e->getMessage());
-            return [];
-        }
+        }, [], "Error getting reactions stats");
     }
     
     // Récupérer toutes les réactions d'une publication (pour la modal de détails)
     public function getReactionsByPublication($idPublication) {
-        $sql = "SELECT r.*, u.nom as utilisateur_nom, u.email
-                FROM reaction r
-                JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
-                WHERE r.id_publication = :idPub
-                ORDER BY r.date_reaction DESC";
-        $db = config::getConnexion();
-
-        try {
+        return $this->executeQuery(function($db) use ($idPublication) {
+            $sql = "SELECT r.*, u.nom as utilisateur_nom, u.email
+                    FROM reaction r
+                    JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
+                    WHERE r.id_publication = :idPub
+                    ORDER BY r.date_reaction DESC";
             $query = $db->prepare($sql);
             $query->execute(['idPub' => $idPublication]);
             return $query->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error getting reactions by publication: " . $e->getMessage());
-            return [];
-        }
+        }, [], "Error getting reactions by publication");
     }
 }
 
